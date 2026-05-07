@@ -1,0 +1,13 @@
+{
+  "name": "wantgoo-proxy",
+  "version": "1.0.0",
+  "description": "Relay proxy for WantGoo internal APIs (bypasses CF-to-CF blocking)",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {}
+}
