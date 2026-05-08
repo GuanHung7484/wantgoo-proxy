@@ -511,6 +511,39 @@ main {
   gap: 8px;
 }
 
+.ai-control {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ai-control label {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ai-control select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid rgba(136, 211, 255, 0.5);
+  border-radius: 8px;
+  background: #08133f;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+}
+
+.ai-control p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .action-panel button {
   width: 100%;
 }
@@ -660,6 +693,10 @@ main {
 
   .action-panel {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .ai-control {
+    grid-column: 1 / -1;
   }
 }
 

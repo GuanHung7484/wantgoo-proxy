@@ -29,7 +29,7 @@
 
       <nav class="rail" aria-label="主要導覽">
         <button class="rail-btn active" data-view="lobby"><span>⌂</span>大廳</button>
-        <button class="rail-btn" data-view="mahjong"><span>🀄</span>麻將</button>
+        <button class="rail-btn" data-view="mahjong"><span>將</span>麻將</button>
         <button class="rail-btn" data-view="store"><span>◆</span>儲值</button>
         <button class="rail-btn" data-view="rules"><span>?</span>規則</button>
       </nav>
@@ -45,7 +45,7 @@
             <div class="hero-copy">
               <span class="eyebrow">新上架</span>
               <h1>麻將三缺一</h1>
-              <p>台灣 16 張玩法，支援抽位、起莊、摸打、吃碰槓與胡牌提示，適合手機與桌面遊玩。</p>
+              <p>台灣 16 張玩法，支援抽位、起莊、摸打、吃碰槓、胡牌提示與 AI 強度選擇。</p>
               <div class="hero-actions">
                 <button class="primary-btn" data-view="mahjong">立即開桌</button>
                 <button class="secondary-btn" data-view="rules">查看規則</button>
@@ -54,7 +54,7 @@
             <div class="feature-board" aria-label="遊戲特色">
               <div><strong>4</strong><span>玩家座位</span></div>
               <div><strong>16</strong><span>張台麻</span></div>
-              <div><strong>17</strong><span>張胡牌</span></div>
+              <div><strong>4</strong><span>AI 強度</span></div>
             </div>
           </div>
 
@@ -89,6 +89,7 @@
             <div class="round-status">
               <span id="dealerLabel">莊家：抽位中</span>
               <span id="wallLabel">牌牆：144</span>
+              <span id="aiStatusLabel">AI：一般，失誤率 70%</span>
             </div>
           </div>
 
@@ -98,13 +99,13 @@
                 <b>你</b><span>手牌 16</span>
               </div>
               <div class="seat" data-wind="南">
-                <b>玩家 A</b><span>等待</span>
+                <b>玩家 A</b><span class="ai-seat-label">AI 一般</span>
               </div>
               <div class="seat dealer-seat" data-wind="西">
-                <b>玩家 B</b><span>抽位中</span>
+                <b>玩家 B</b><span class="ai-seat-label">AI 一般</span>
               </div>
               <div class="seat" data-wind="北">
-                <b>玩家 C</b><span>等待</span>
+                <b>玩家 C</b><span class="ai-seat-label">AI 一般</span>
               </div>
             </aside>
 
@@ -121,6 +122,16 @@
             </div>
 
             <aside class="action-panel">
+              <div class="ai-control">
+                <label for="aiDifficulty">電腦 AI 強度</label>
+                <select id="aiDifficulty">
+                  <option value="easy">一般 - 失誤率 70%</option>
+                  <option value="normal">中等 - 失誤率 50%</option>
+                  <option value="hard">困難 - 失誤率 30%</option>
+                  <option value="expert">超困難 - 失誤率 15%</option>
+                </select>
+                <p id="aiDescription">電腦很笨，常打出沒有幫助的牌。</p>
+              </div>
               <button id="seatDrawBtn">抽位 / 起莊</button>
               <button id="drawBtn">摸牌</button>
               <button id="discardBtn">出牌</button>
@@ -177,8 +188,8 @@
                 <p>16 張台麻胡牌需完成 5 組面子加 1 對將牌，胡牌時共 17 張。未達條件卻宣稱胡牌即為詐胡。</p>
               </article>
               <article>
-                <h3>計分方式</h3>
-                <p>得分由底分與台數組成。胡牌取得基本底分，三暗刻、大三元等牌型會依台數額外加乘。</p>
+                <h3>電腦 AI 強度</h3>
+                <p>一般失誤率 70%，中等 50%，困難 30%，超困難 15%。強度越高，電腦越常保留對子與連續牌，較少亂打。</p>
               </article>
             </div>
           </div>

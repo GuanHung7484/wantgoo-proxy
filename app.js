@@ -5,14 +5,43 @@ const views = {
   rules: document.getElementById("rulesView"),
 };
 
+const aiProfiles = {
+  easy: {
+    label: "一般",
+    mistakeRate: 70,
+    description: "電腦很笨，常打出沒有幫助的牌。",
+  },
+  normal: {
+    label: "中等",
+    mistakeRate: 50,
+    description: "電腦普通，會保留一些可用牌，但仍常失誤。",
+  },
+  hard: {
+    label: "困難",
+    mistakeRate: 30,
+    description: "電腦一般強，會優先保留對子與連續牌。",
+  },
+  expert: {
+    label: "超困難",
+    mistakeRate: 15,
+    description: "電腦超強，會更積極保留好牌，但偶爾仍會出錯。",
+  },
+};
+
 const state = {
   wall: [],
   hand: [],
+  opponents: {
+    "玩家 A": [],
+    "玩家 B": [],
+    "玩家 C": [],
+  },
   selectedIndex: 0,
   dealer: null,
   lastDiscard: null,
   turn: "setup",
   balance: 1750,
+  aiDifficulty: "easy",
 };
 
 const suits = [
@@ -25,6 +54,7 @@ const flowers = ["春", "夏", "秋", "冬", "梅", "蘭", "竹", "菊"];
 const winds = ["東", "南", "西", "北"];
 const handEl = document.getElementById("playerHand");
 const logEl = document.getElementById("gameLog");
+const aiSelect = document.getElementById("aiDifficulty");
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => el.classList.toggle("active", key === name));
@@ -61,13 +91,31 @@ function shuffle(items) {
 function startRound() {
   state.wall = buildWall();
   state.hand = state.wall.splice(0, 16).sort(sortTile);
+  Object.keys(state.opponents).forEach((name) => {
+    state.opponents[name] = state.wall.splice(0, 16).sort(sortTile);
+  });
   state.selectedIndex = 0;
   state.dealer = null;
   state.lastDiscard = null;
   state.turn = "setup";
   logEl.innerHTML = "";
-  log("新局建立：請先抽位與起莊。");
+  log(`新局建立：AI 強度為 ${currentAi().label}，失誤率 ${currentAi().mistakeRate}%。請先抽位與起莊。`);
   render();
+}
+
+function currentAi() {
+  return aiProfiles[state.aiDifficulty];
+}
+
+function setAiDifficulty(value) {
+  state.aiDifficulty = value;
+  const ai = currentAi();
+  document.getElementById("aiDescription").textContent = ai.description;
+  document.getElementById("aiStatusLabel").textContent = `AI：${ai.label}，失誤率 ${ai.mistakeRate}%`;
+  document.querySelectorAll(".ai-seat-label").forEach((label) => {
+    label.textContent = `AI ${ai.label}`;
+  });
+  log(`AI 強度切換為「${ai.label}」，失誤率 ${ai.mistakeRate}%。`);
 }
 
 function drawSeatAndDealer() {
@@ -109,9 +157,55 @@ function discardTile() {
   state.lastDiscard = tile;
   state.selectedIndex = Math.max(0, state.selectedIndex - 1);
   state.turn = "wait";
-  document.getElementById("topDiscard").textContent = `打出 ${tile.label}`;
-  log(`你打出 ${tile.label}。下家摸打後輪回你。`);
+  document.getElementById("topDiscard").textContent = `你打出 ${tile.label}`;
+  log(`你打出 ${tile.label}。電腦依目前 AI 強度思考。`);
+  simulateOpponentTurn();
   render();
+}
+
+function simulateOpponentTurn() {
+  const names = Object.keys(state.opponents);
+  names.forEach((name) => {
+    if (!state.wall.length) return;
+    const hand = state.opponents[name];
+    hand.push(state.wall.shift());
+    const mistake = Math.random() * 100 < currentAi().mistakeRate;
+    const discardIndex = chooseOpponentDiscard(hand, mistake);
+    const [discarded] = hand.splice(discardIndex, 1);
+    state.lastDiscard = discarded;
+    document.getElementById("topDiscard").textContent = `${name} 打出 ${discarded.label}`;
+    const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
+    log(`${name}（AI ${currentAi().label}）摸打一張，${thinking}：${discarded.label}。`);
+  });
+  state.turn = "player";
+}
+
+function chooseOpponentDiscard(hand, mistake) {
+  if (mistake) return Math.floor(Math.random() * hand.length);
+  let lowestScore = Number.POSITIVE_INFINITY;
+  let targetIndex = 0;
+  hand.forEach((tile, index) => {
+    const score = tileKeepScore(tile, hand);
+    if (score < lowestScore) {
+      lowestScore = score;
+      targetIndex = index;
+    }
+  });
+  return targetIndex;
+}
+
+function tileKeepScore(tile, hand) {
+  let score = 0;
+  const sameCount = hand.filter((item) => item.label === tile.label).length;
+  if (sameCount >= 2) score += 5;
+  if (sameCount >= 3) score += 4;
+  if (tile.suit !== "字" && tile.suit !== "花") {
+    const ranks = hand.filter((item) => item.suit === tile.suit).map((item) => item.rank);
+    if (ranks.includes(tile.rank - 1) || ranks.includes(tile.rank + 1)) score += 3;
+    if (ranks.includes(tile.rank - 2) || ranks.includes(tile.rank + 2)) score += 1;
+  }
+  if (tile.suit === "花") score -= 2;
+  return score;
 }
 
 function claim(action) {
@@ -224,6 +318,7 @@ document.getElementById("ponBtn").addEventListener("click", () => claim("碰"));
 document.getElementById("kanBtn").addEventListener("click", () => claim("槓"));
 document.getElementById("huBtn").addEventListener("click", checkHu);
 document.getElementById("newRoundBtn").addEventListener("click", startRound);
+aiSelect.addEventListener("change", (event) => setAiDifficulty(event.target.value));
 
 document.querySelectorAll(".payment-grid button").forEach((button, index) => {
   button.addEventListener("click", () => {
@@ -235,4 +330,5 @@ document.querySelectorAll(".payment-grid button").forEach((button, index) => {
   });
 });
 
+setAiDifficulty(state.aiDifficulty);
 startRound();
