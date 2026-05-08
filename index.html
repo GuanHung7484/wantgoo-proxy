@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>遊戲室 Online - 麻將三缺一</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <button class="icon-btn" aria-label="主選單">☰</button>
+        <div class="brand">
+          <span class="brand-mark">遊</span>
+          <div>
+            <strong>遊戲室 Online</strong>
+            <span>手機版 / 網頁版通用</span>
+          </div>
+        </div>
+        <div class="wallet">
+          <span class="coin">S</span>
+          <strong id="coinBalance">1,750.00</strong>
+        </div>
+        <button class="store-pill" data-view="store">商城</button>
+      </header>
+
+      <nav class="rail" aria-label="主要導覽">
+        <button class="rail-btn active" data-view="lobby"><span>⌂</span>大廳</button>
+        <button class="rail-btn" data-view="mahjong"><span>🀄</span>麻將</button>
+        <button class="rail-btn" data-view="store"><span>◆</span>儲值</button>
+        <button class="rail-btn" data-view="rules"><span>?</span>規則</button>
+      </nav>
+
+      <main>
+        <section class="view lobby-view active" id="lobbyView">
+          <div class="ticker">
+            <span>NEWS</span>
+            <p>歡迎進入遊戲室 Online，第一款遊戲「麻將三缺一」已開放試玩。</p>
+          </div>
+
+          <div class="hero">
+            <div class="hero-copy">
+              <span class="eyebrow">新上架</span>
+              <h1>麻將三缺一</h1>
+              <p>台灣 16 張玩法，支援抽位、起莊、摸打、吃碰槓與胡牌提示，適合手機與桌面遊玩。</p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view="mahjong">立即開桌</button>
+                <button class="secondary-btn" data-view="rules">查看規則</button>
+              </div>
+            </div>
+            <div class="feature-board" aria-label="遊戲特色">
+              <div><strong>4</strong><span>玩家座位</span></div>
+              <div><strong>16</strong><span>張台麻</span></div>
+              <div><strong>17</strong><span>張胡牌</span></div>
+            </div>
+          </div>
+
+          <div class="game-strip">
+            <article class="game-card featured">
+              <div class="card-badge">熱門</div>
+              <h2>麻將三缺一</h2>
+              <p>東南西北抽位，莊家先打，逆時針輪流摸打。</p>
+              <button data-view="mahjong">進入遊戲</button>
+            </article>
+            <article class="game-card locked">
+              <div class="card-badge">籌備中</div>
+              <h2>百家樂</h2>
+              <p>下一款牌桌遊戲預留欄位。</p>
+              <button disabled>尚未開放</button>
+            </article>
+            <article class="game-card locked">
+              <div class="card-badge">籌備中</div>
+              <h2>水果拉霸</h2>
+              <p>保留給後續多款式遊戲擴充。</p>
+              <button disabled>尚未開放</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="view mahjong-view" id="mahjongView">
+          <div class="table-head">
+            <div>
+              <span class="eyebrow">台灣 16 張</span>
+              <h2>麻將三缺一牌桌</h2>
+            </div>
+            <div class="round-status">
+              <span id="dealerLabel">莊家：抽位中</span>
+              <span id="wallLabel">牌牆：144</span>
+            </div>
+          </div>
+
+          <div class="mahjong-layout">
+            <aside class="players-panel">
+              <div class="seat current" data-wind="東">
+                <b>你</b><span>手牌 16</span>
+              </div>
+              <div class="seat" data-wind="南">
+                <b>玩家 A</b><span>等待</span>
+              </div>
+              <div class="seat dealer-seat" data-wind="西">
+                <b>玩家 B</b><span>抽位中</span>
+              </div>
+              <div class="seat" data-wind="北">
+                <b>玩家 C</b><span>等待</span>
+              </div>
+            </aside>
+
+            <div class="mahjong-table">
+              <div class="opponent top">玩家 B <span id="topDiscard">尚未出牌</span></div>
+              <div class="opponent left">玩家 A</div>
+              <div class="opponent right">玩家 C</div>
+              <div class="wall">
+                <div class="dice" id="diceBox">骰</div>
+                <strong id="turnLabel">請先抽位起莊</strong>
+                <span id="lastDiscard">海底：無</span>
+              </div>
+              <div class="hand" id="playerHand" aria-label="玩家手牌"></div>
+            </div>
+
+            <aside class="action-panel">
+              <button id="seatDrawBtn">抽位 / 起莊</button>
+              <button id="drawBtn">摸牌</button>
+              <button id="discardBtn">出牌</button>
+              <button id="chiBtn">吃</button>
+              <button id="ponBtn">碰</button>
+              <button id="kanBtn">槓</button>
+              <button id="huBtn">胡</button>
+              <button id="newRoundBtn" class="ghost">重新開局</button>
+            </aside>
+          </div>
+
+          <div class="log-panel">
+            <h3>局況紀錄</h3>
+            <ol id="gameLog"></ol>
+          </div>
+        </section>
+
+        <section class="view store-view" id="storeView">
+          <div class="store-head">
+            <div>
+              <span class="eyebrow">商城</span>
+              <h2>點數儲值與支付</h2>
+            </div>
+            <span>當前點數：<strong id="storeBalance">1,750.00</strong></span>
+          </div>
+          <div class="payment-grid">
+            <button>產品購買</button>
+            <button>禮包開通</button>
+            <button class="highlight">序號開通</button>
+            <button>電信支付</button>
+            <button>銀行轉帳</button>
+            <button>信用卡支付</button>
+            <button>LINE Pay</button>
+            <button>台灣 Pay</button>
+            <button>免費抵扣</button>
+          </div>
+        </section>
+
+        <section class="view rules-view" id="rulesView">
+          <div class="rules">
+            <span class="eyebrow">玩法說明</span>
+            <h2>台灣麻將 16 張基本規則</h2>
+            <div class="rule-grid">
+              <article>
+                <h3>遊戲準備與流程</h3>
+                <p>玩家以東、南、西、北抽位決定座位，莊家擲骰決定開門位置後抓牌。打牌輪流方向為逆時針，抓牌與補花方向為順時針。</p>
+              </article>
+              <article>
+                <h3>核心動作</h3>
+                <p>可摸牌、出牌、吃上家順子、碰任一玩家打出的同牌，以及槓四張同牌。槓牌後需從牌牆末端補一張。</p>
+              </article>
+              <article>
+                <h3>胡牌條件</h3>
+                <p>16 張台麻胡牌需完成 5 組面子加 1 對將牌，胡牌時共 17 張。未達條件卻宣稱胡牌即為詐胡。</p>
+              </article>
+              <article>
+                <h3>計分方式</h3>
+                <p>得分由底分與台數組成。胡牌取得基本底分，三暗刻、大三元等牌型會依台數額外加乘。</p>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
