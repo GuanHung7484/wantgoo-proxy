@@ -38,6 +38,7 @@ const suits = [
 const honors = ["東", "南", "西", "北", "中", "發", "白"];
 const flowers = ["春", "夏", "秋", "冬", "梅", "蘭", "竹", "菊"];
 const winds = ["東", "南", "西", "北"];
+const chineseRanks = ["一", "二", "三", "四", "伍", "六", "七", "八", "九"];
 
 const handEl = document.getElementById("playerHand");
 const logEl = document.getElementById("gameLog");
@@ -382,9 +383,10 @@ function render() {
   handEl.innerHTML = "";
   state.hand.forEach((tile, index) => {
     const button = document.createElement("button");
-    button.className = `tile${index === state.selectedIndex ? " selected" : ""}${index === state.hand.length - 1 && state.lastDrawSelf ? " drawn" : ""}`;
-    button.textContent = tile.label;
+    button.className = `tile tile-${tile.suit}${index === state.selectedIndex ? " selected" : ""}${index === state.hand.length - 1 && state.lastDrawSelf ? " drawn" : ""}`;
+    button.setAttribute("aria-label", tile.label);
     button.type = "button";
+    button.appendChild(createTileFace(tile));
     button.addEventListener("click", () => {
       state.selectedIndex = index;
       render();
@@ -400,6 +402,71 @@ function render() {
     seat.classList.toggle("dealer-seat", seat.dataset.wind === state.dealer);
   });
   renderPromptActions();
+}
+
+function createTileFace(tile) {
+  const face = document.createElement("span");
+  face.className = "tile-face";
+  if (tile.suit === "筒") renderDots(face, tile.rank);
+  if (tile.suit === "條") renderBamboo(face, tile.rank);
+  if (tile.suit === "萬") renderWan(face, tile.rank);
+  if (tile.suit === "字") renderHonor(face, tile.label);
+  if (tile.suit === "花") renderFlower(face, tile.label);
+  return face;
+}
+
+function renderDots(face, rank) {
+  face.classList.add("dot-face", `rank-${rank}`);
+  const count = rank === 1 ? 1 : rank;
+  for (let index = 0; index < count; index += 1) {
+    const dot = document.createElement("span");
+    dot.className = `dot dot-${(index % 3) + 1}`;
+    face.appendChild(dot);
+  }
+}
+
+function renderBamboo(face, rank) {
+  face.classList.add("bamboo-face", `rank-${rank}`);
+  if (rank === 1) {
+    const bird = document.createElement("span");
+    bird.className = "bird";
+    bird.textContent = "鳥";
+    face.appendChild(bird);
+    return;
+  }
+  for (let index = 0; index < rank; index += 1) {
+    const bamboo = document.createElement("span");
+    bamboo.className = `bamboo bamboo-${index % 2}`;
+    face.appendChild(bamboo);
+  }
+}
+
+function renderWan(face, rank) {
+  face.classList.add("wan-face");
+  const top = document.createElement("span");
+  top.className = "wan-rank";
+  top.textContent = chineseRanks[rank - 1];
+  const bottom = document.createElement("span");
+  bottom.className = "wan-word";
+  bottom.textContent = "萬";
+  face.append(top, bottom);
+}
+
+function renderHonor(face, label) {
+  face.classList.add("honor-face", label === "中" ? "red-honor" : label === "發" ? "green-honor" : "");
+  face.textContent = label;
+}
+
+function renderFlower(face, label) {
+  face.classList.add("flower-face");
+  const stem = document.createElement("span");
+  stem.className = "flower-stem";
+  const blossom = document.createElement("span");
+  blossom.className = "flower-blossom";
+  const word = document.createElement("span");
+  word.className = "flower-word";
+  word.textContent = label;
+  face.append(stem, blossom, word);
 }
 
 function getTurnText() {
