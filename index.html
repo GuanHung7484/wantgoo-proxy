@@ -93,7 +93,10 @@
             </div>
           </div>
 
-          <div class="portrait-notice">麻將建議將手機轉為橫向遊玩，畫面會切換成完整牌桌。</div>
+          <div class="portrait-notice">
+            <strong>請將手機轉為橫向遊玩麻將</strong>
+            <span>直立模式保留大廳、商城與規則瀏覽；麻將牌桌會在橫向模式開啟完整操作。</span>
+          </div>
 
           <div class="mahjong-layout">
             <div class="table-toolbar">
@@ -107,7 +110,7 @@
                 </select>
                 <p id="aiDescription">電腦很笨，常打出沒有幫助的牌。</p>
               </div>
-              <button id="seatDrawBtn">抽位 / 起莊</button>
+              <button id="seatDrawBtn">骰子 / 起莊</button>
               <button id="drawBtn">摸牌</button>
               <button id="discardBtn">出牌</button>
               <button id="newRoundBtn" class="ghost">重新開局</button>
@@ -133,7 +136,7 @@
                 <div class="wall wall-right" aria-hidden="true"></div>
 
                 <div class="discard-river" id="discardRiver">
-                  <div class="dice" id="diceBox">骰</div>
+                  <button class="dice" id="diceBox" type="button" aria-label="擲骰抽位起莊">骰</button>
                   <strong id="turnLabel">請先抽位起莊</strong>
                   <span id="lastDiscard">海底：無</span>
                 </div>

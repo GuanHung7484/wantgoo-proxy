@@ -110,6 +110,10 @@ function setAiDifficulty(value) {
 }
 
 function drawSeatAndDealer() {
+  if (state.dealer) {
+    log(`本局已起莊，莊家為 ${state.dealer}。要重新抽位請按「重新開局」。`);
+    return;
+  }
   const dealerWind = winds[Math.floor(Math.random() * winds.length)];
   const diceA = Math.ceil(Math.random() * 6);
   const diceB = Math.ceil(Math.random() * 6);
@@ -428,6 +432,7 @@ document.querySelectorAll("[data-view]").forEach((button) => {
 });
 
 document.getElementById("seatDrawBtn").addEventListener("click", drawSeatAndDealer);
+document.getElementById("diceBox").addEventListener("click", drawSeatAndDealer);
 document.getElementById("drawBtn").addEventListener("click", drawTile);
 document.getElementById("discardBtn").addEventListener("click", discardTile);
 document.getElementById("newRoundBtn").addEventListener("click", startRound);

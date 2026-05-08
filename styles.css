@@ -336,12 +336,24 @@ main {
   display: none;
   max-width: 1180px;
   margin: 0 0 10px;
-  padding: 9px 12px;
+  padding: 18px;
   border: 1px solid rgba(255, 210, 91, 0.5);
   border-radius: 8px;
   background: rgba(7, 13, 47, 0.86);
   color: var(--gold);
   font-weight: 900;
+}
+
+.portrait-notice strong,
+.portrait-notice span {
+  display: block;
+}
+
+.portrait-notice span {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .mahjong-layout {
@@ -564,6 +576,7 @@ main {
   color: #151a52;
   font-size: 24px;
   font-weight: 900;
+  cursor: pointer;
 }
 
 .discard-river strong,
@@ -803,29 +816,24 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .mahjong-view {
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-
-  .mahjong-layout {
-    min-width: 900px;
-  }
-
   .portrait-notice {
     display: block;
   }
 
+  .mahjong-layout {
+    min-width: 0;
+  }
+
+  .mahjong-stage {
+    display: none;
+  }
+
   .table-toolbar {
-    grid-template-columns: minmax(240px, 1fr) repeat(4, 110px);
+    grid-template-columns: 1fr 1fr;
   }
 
   .ai-control {
     grid-column: 1 / -1;
-  }
-
-  .mahjong-table {
-    min-height: auto;
   }
 }
 
@@ -874,6 +882,10 @@ main {
 }
 
 @media (max-width: 900px) and (orientation: landscape) {
+  body {
+    overflow: hidden;
+  }
+
   .app-shell {
     padding-bottom: 0;
   }
@@ -888,6 +900,13 @@ main {
     padding: 6px;
   }
 
+  .mahjong-view.active {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
   .table-head,
   .log-panel {
     display: none;
@@ -897,32 +916,113 @@ main {
     min-width: 0;
   }
 
+  .mahjong-stage {
+    display: block;
+    min-height: 0;
+  }
+
   .table-toolbar {
-    grid-template-columns: 1.35fr repeat(4, 92px);
-    padding: 6px;
+    grid-template-columns: minmax(190px, 1fr) repeat(4, minmax(70px, 88px));
+    gap: 5px;
+    padding: 5px;
   }
 
   .ai-control {
     grid-column: auto;
-    padding: 6px;
+    gap: 3px;
+    padding: 5px;
+  }
+
+  .ai-control label {
+    font-size: 11px;
+  }
+
+  .ai-control select {
+    min-height: 32px;
+    font-size: 12px;
   }
 
   .ai-control p {
     display: none;
   }
 
+  .table-toolbar button {
+    min-height: 38px;
+    font-size: 13px;
+  }
+
   .mahjong-table {
     width: calc(100vw - 12px);
-    height: calc(100vh - 74px);
+    height: calc(100vh - 58px);
     min-height: 0;
     aspect-ratio: auto;
   }
 
+  .seat-marker {
+    min-width: 82px;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+
+  .seat-marker::before {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+
+  .seat-bottom {
+    bottom: 82px;
+  }
+
+  .wall-top {
+    top: 38px;
+    height: 14px;
+  }
+
+  .wall-left,
+  .wall-right {
+    width: 14px;
+  }
+
+  .wall-left {
+    left: 44px;
+  }
+
+  .wall-right {
+    right: 44px;
+  }
+
+  .discard-river {
+    inset: 23% 25% 32%;
+  }
+
+  .dice {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  .prompt-actions {
+    bottom: 58px;
+    gap: 5px;
+  }
+
+  .prompt-actions button {
+    min-width: 44px;
+    min-height: 38px;
+    font-size: 17px;
+  }
+
   .hand {
-    grid-template-columns: repeat(17, minmax(28px, 1fr));
+    left: 8px;
+    right: 8px;
+    bottom: 7px;
+    grid-template-columns: repeat(17, minmax(24px, 1fr));
+    gap: 3px;
   }
 
   .tile {
-    font-size: 14px;
+    border-bottom-width: 3px;
+    font-size: 12px;
   }
 }
