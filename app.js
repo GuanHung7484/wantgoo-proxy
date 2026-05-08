@@ -6,26 +6,10 @@ const views = {
 };
 
 const aiProfiles = {
-  easy: {
-    label: "一般",
-    mistakeRate: 70,
-    description: "電腦很笨，常打出沒有幫助的牌。",
-  },
-  normal: {
-    label: "中等",
-    mistakeRate: 50,
-    description: "電腦普通，會保留一些可用牌，但仍常失誤。",
-  },
-  hard: {
-    label: "困難",
-    mistakeRate: 30,
-    description: "電腦一般強，會優先保留對子與連續牌。",
-  },
-  expert: {
-    label: "超困難",
-    mistakeRate: 15,
-    description: "電腦超強，會更積極保留好牌，但偶爾仍會出錯。",
-  },
+  easy: { label: "一般", mistakeRate: 70, description: "電腦很笨，常打出沒有幫助的牌。" },
+  normal: { label: "中等", mistakeRate: 50, description: "電腦普通，會保留一些可用牌，但仍常失誤。" },
+  hard: { label: "困難", mistakeRate: 30, description: "電腦一般強，會優先保留對子與連續牌。" },
+  expert: { label: "超困難", mistakeRate: 15, description: "電腦超強，會更積極保留好牌，但偶爾仍會出錯。" },
 };
 
 const state = {
@@ -39,6 +23,8 @@ const state = {
   selectedIndex: 0,
   dealer: null,
   lastDiscard: null,
+  lastDrawSelf: false,
+  isTing: false,
   turn: "setup",
   balance: 1750,
   aiDifficulty: "easy",
@@ -52,9 +38,11 @@ const suits = [
 const honors = ["東", "南", "西", "北", "中", "發", "白"];
 const flowers = ["春", "夏", "秋", "冬", "梅", "蘭", "竹", "菊"];
 const winds = ["東", "南", "西", "北"];
+
 const handEl = document.getElementById("playerHand");
 const logEl = document.getElementById("gameLog");
 const aiSelect = document.getElementById("aiDifficulty");
+const promptActionsEl = document.getElementById("promptActions");
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => el.classList.toggle("active", key === name));
@@ -97,6 +85,8 @@ function startRound() {
   state.selectedIndex = 0;
   state.dealer = null;
   state.lastDiscard = null;
+  state.lastDrawSelf = false;
+  state.isTing = false;
   state.turn = "setup";
   logEl.innerHTML = "";
   log(`新局建立：AI 強度為 ${currentAi().label}，失誤率 ${currentAi().mistakeRate}%。請先抽位與起莊。`);
@@ -116,6 +106,7 @@ function setAiDifficulty(value) {
     label.textContent = `AI ${ai.label}`;
   });
   log(`AI 強度切換為「${ai.label}」，失誤率 ${ai.mistakeRate}%。`);
+  renderPromptActions();
 }
 
 function drawSeatAndDealer() {
@@ -135,6 +126,10 @@ function drawTile() {
     log("尚未抽位起莊，請先按「抽位 / 起莊」。");
     return;
   }
+  if (state.turn === "finished") {
+    log("本局已結束，請重新開局。");
+    return;
+  }
   if (!state.wall.length) {
     log("牌牆已摸完，本局流局。");
     return;
@@ -146,18 +141,23 @@ function drawTile() {
   const tile = state.wall.shift();
   state.hand.push(tile);
   state.selectedIndex = state.hand.length - 1;
+  state.lastDrawSelf = true;
   state.turn = "player";
   log(`摸牌：${tile.label}。`);
   render();
 }
 
 function discardTile() {
+  if (state.turn === "finished") {
+    log("本局已結束，請重新開局。");
+    return;
+  }
   if (!state.hand.length) return;
   const [tile] = state.hand.splice(state.selectedIndex, 1);
   state.lastDiscard = tile;
+  state.lastDrawSelf = false;
   state.selectedIndex = Math.max(0, state.selectedIndex - 1);
   state.turn = "wait";
-  document.getElementById("topDiscard").textContent = `你打出 ${tile.label}`;
   log(`你打出 ${tile.label}。電腦依目前 AI 強度思考。`);
   simulateOpponentTurn();
   render();
@@ -173,7 +173,6 @@ function simulateOpponentTurn() {
     const discardIndex = chooseOpponentDiscard(hand, mistake);
     const [discarded] = hand.splice(discardIndex, 1);
     state.lastDiscard = discarded;
-    document.getElementById("topDiscard").textContent = `${name} 打出 ${discarded.label}`;
     const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
     log(`${name}（AI ${currentAi().label}）摸打一張，${thinking}：${discarded.label}。`);
   });
@@ -222,40 +221,144 @@ function claim(action) {
     log(`不能槓 ${state.lastDiscard.label}：手上未滿三張同牌。`);
     return;
   }
-  if (action === "吃" && !canChi(state.lastDiscard)) {
-    log(`不能吃 ${state.lastDiscard.label}：只能吃上家且需組成順子。`);
+  log(`${action}牌成立：以 ${state.lastDiscard.label} 組成面子。`);
+  if (action === "碰") removeTilesFromHand(state.lastDiscard.label, 2);
+  if (action === "槓") {
+    removeTilesFromHand(state.lastDiscard.label, 3);
+    if (state.wall.length) {
+      const supplement = state.wall.pop();
+      state.hand.push(supplement);
+      log(`槓後從牌牆末端補 ${supplement.label}。`);
+    }
+  }
+  state.lastDiscard = null;
+  state.lastDrawSelf = false;
+  render();
+}
+
+function handlePromptAction(action) {
+  if (action === "pon") claim("碰");
+  if (action === "kan") {
+    if (state.lastDiscard) claim("槓");
+    else concealedKan();
+  }
+  if (action === "hu") declareHu(false);
+  if (action === "zimo") declareHu(true);
+  if (action === "ting") {
+    state.isTing = true;
+    log("聽牌提示成立：你已進入聽牌狀態，接下來可等胡或自摸。");
+    render();
+  }
+}
+
+function concealedKan() {
+  const entry = Object.entries(countTiles(state.hand)).find(([, count]) => count >= 4);
+  if (!entry) {
+    log("目前沒有可槓的四張同牌。");
     return;
   }
-  log(`${action}牌成立：以 ${state.lastDiscard.label} 組成面子。`);
-  if (action === "槓" && state.wall.length) {
+  const [label] = entry;
+  removeTilesFromHand(label, 4);
+  log(`暗槓成立：你槓 ${label}。`);
+  if (state.wall.length) {
     const supplement = state.wall.pop();
     state.hand.push(supplement);
+    state.lastDrawSelf = true;
     log(`槓後從牌牆末端補 ${supplement.label}。`);
   }
+  render();
+}
+
+function declareHu(selfDraw) {
+  if (selfDraw && !canSelfDraw()) {
+    log("尚未達成自摸條件。");
+    return;
+  }
+  if (!selfDraw && !canHuDiscard()) {
+    log("目前棄牌未達胡牌條件。");
+    return;
+  }
+  log(selfDraw ? "自摸成立：你以 17 張完成胡牌。" : `胡牌成立：你胡 ${state.lastDiscard.label}。`);
+  state.turn = "finished";
   state.lastDiscard = null;
   render();
 }
 
-function canChi(tile) {
-  if (!tile || tile.suit === "字" || tile.suit === "花") return false;
-  const ranks = state.hand.filter((item) => item.suit === tile.suit).map((item) => item.rank);
-  return (
-    (ranks.includes(tile.rank - 2) && ranks.includes(tile.rank - 1)) ||
-    (ranks.includes(tile.rank - 1) && ranks.includes(tile.rank + 1)) ||
-    (ranks.includes(tile.rank + 1) && ranks.includes(tile.rank + 2))
-  );
+function removeTilesFromHand(label, amount) {
+  let removed = 0;
+  state.hand = state.hand.filter((tile) => {
+    if (tile.label === label && removed < amount) {
+      removed += 1;
+      return false;
+    }
+    return true;
+  });
+  state.selectedIndex = Math.min(state.selectedIndex, Math.max(0, state.hand.length - 1));
 }
 
-function checkHu() {
-  if (state.hand.length !== 17) {
-    log("尚未達 17 張，16 張台麻胡牌需 5 組面子加 1 對將牌。");
-    return;
-  }
-  const counts = countTiles(state.hand);
+function getAvailablePrompts() {
+  return {
+    hu: canHuDiscard(),
+    pon: canPon(),
+    kan: canKan(),
+    ting: canTing(),
+    zimo: canSelfDraw(),
+  };
+}
+
+function canPon() {
+  if (state.turn === "finished") return false;
+  return Boolean(state.lastDiscard) && state.hand.filter((tile) => tile.label === state.lastDiscard.label).length >= 2;
+}
+
+function canKan() {
+  if (state.turn === "finished") return false;
+  if (state.lastDiscard && state.hand.filter((tile) => tile.label === state.lastDiscard.label).length >= 3) return true;
+  return Object.values(countTiles(state.hand)).some((count) => count >= 4);
+}
+
+function canHuDiscard() {
+  if (!state.lastDiscard || state.turn === "finished") return false;
+  return isPotentialWinningHand([...state.hand, state.lastDiscard]);
+}
+
+function canSelfDraw() {
+  if (state.turn === "finished") return false;
+  return state.lastDrawSelf && state.hand.length === 17 && isPotentialWinningHand(state.hand);
+}
+
+function canTing() {
+  if (state.turn === "finished") return false;
+  if (state.isTing || state.hand.length !== 16) return false;
+  return uniqueTilesFromWallAndHand().some((tile) => isPotentialWinningHand([...state.hand, tile]));
+}
+
+function uniqueTilesFromWallAndHand() {
+  const map = new Map();
+  [...state.wall, ...state.hand].forEach((tile) => {
+    if (!map.has(tile.label)) map.set(tile.label, tile);
+  });
+  return [...map.values()];
+}
+
+function isPotentialWinningHand(hand) {
+  if (hand.length !== 17) return false;
+  const counts = countTiles(hand);
   const pairCount = Object.values(counts).filter((count) => count >= 2).length;
   const tripletCount = Object.values(counts).filter((count) => count >= 3).length;
-  const possible = pairCount >= 1 && tripletCount >= 1;
-  log(possible ? "胡牌提示：牌型可能成立，請依正式番台檢核。" : "未形成基本胡牌輪廓，宣告胡牌可能為詐胡。");
+  const sequenceCount = countSequences(hand);
+  return pairCount >= 1 && tripletCount + sequenceCount >= 4;
+}
+
+function countSequences(hand) {
+  let total = 0;
+  suits.forEach((suit) => {
+    const ranks = hand.filter((tile) => tile.suit === suit.name).map((tile) => tile.rank);
+    for (let rank = 1; rank <= 7; rank += 1) {
+      if (ranks.includes(rank) && ranks.includes(rank + 1) && ranks.includes(rank + 2)) total += 1;
+    }
+  });
+  return total;
 }
 
 function countTiles(hand) {
@@ -275,7 +378,7 @@ function render() {
   handEl.innerHTML = "";
   state.hand.forEach((tile, index) => {
     const button = document.createElement("button");
-    button.className = `tile${index === state.selectedIndex ? " selected" : ""}${index === state.hand.length - 1 && state.hand.length === 17 ? " drawn" : ""}`;
+    button.className = `tile${index === state.selectedIndex ? " selected" : ""}${index === state.hand.length - 1 && state.lastDrawSelf ? " drawn" : ""}`;
     button.textContent = tile.label;
     button.type = "button";
     button.addEventListener("click", () => {
@@ -288,16 +391,30 @@ function render() {
   document.getElementById("dealerLabel").textContent = `莊家：${state.dealer || "抽位中"}`;
   document.getElementById("lastDiscard").textContent = `海底：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
   document.getElementById("turnLabel").textContent = getTurnText();
-  document.querySelectorAll(".seat").forEach((seat) => {
+  document.getElementById("playerSeatStatus").textContent = state.isTing ? `聽牌 ${state.hand.length}` : `手牌 ${state.hand.length}`;
+  document.querySelectorAll(".seat-marker").forEach((seat) => {
     seat.classList.toggle("dealer-seat", seat.dataset.wind === state.dealer);
   });
+  renderPromptActions();
 }
 
 function getTurnText() {
+  if (state.turn === "finished") return "本局已結束，請重新開局";
   if (!state.dealer) return "請先抽位起莊";
-  if (state.hand.length === 17) return "請選一張牌打出或檢查胡牌";
-  if (state.turn === "wait") return "對手回合，可宣告吃碰槓";
+  if (state.hand.length === 17) return "請選一張牌打出，或使用跳出的胡 / 自摸提示";
+  if (state.lastDiscard) return "若條件成立，動作提示會在手牌上方跳出";
   return "輪到你摸牌";
+}
+
+function renderPromptActions() {
+  const prompts = getAvailablePrompts();
+  let visible = false;
+  promptActionsEl.querySelectorAll("button").forEach((button) => {
+    const available = Boolean(prompts[button.dataset.promptAction]);
+    button.classList.toggle("available", available);
+    visible = visible || available;
+  });
+  promptActionsEl.classList.toggle("visible", visible);
 }
 
 function log(message) {
@@ -313,12 +430,11 @@ document.querySelectorAll("[data-view]").forEach((button) => {
 document.getElementById("seatDrawBtn").addEventListener("click", drawSeatAndDealer);
 document.getElementById("drawBtn").addEventListener("click", drawTile);
 document.getElementById("discardBtn").addEventListener("click", discardTile);
-document.getElementById("chiBtn").addEventListener("click", () => claim("吃"));
-document.getElementById("ponBtn").addEventListener("click", () => claim("碰"));
-document.getElementById("kanBtn").addEventListener("click", () => claim("槓"));
-document.getElementById("huBtn").addEventListener("click", checkHu);
 document.getElementById("newRoundBtn").addEventListener("click", startRound);
 aiSelect.addEventListener("change", (event) => setAiDifficulty(event.target.value));
+promptActionsEl.querySelectorAll("button").forEach((button) => {
+  button.addEventListener("click", () => handlePromptAction(button.dataset.promptAction));
+});
 
 document.querySelectorAll(".payment-grid button").forEach((button, index) => {
   button.addEventListener("click", () => {
