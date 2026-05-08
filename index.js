@@ -4,7 +4,11 @@
 
 const http = require('http');
 
-const ALLOWED_HOSTS = new Set(['www.wantgoo.com']);
+const ALLOWED_HOSTS = new Set([
+  'www.wantgoo.com',
+  'www.tpex.org.tw',     // 櫃買中心（OTC 上櫃資料來源）
+  'tw.stock.yahoo.com',  // 奇摩股市
+]);
 
 const WG_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
