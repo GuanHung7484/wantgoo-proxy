@@ -72,14 +72,14 @@ const slotSymbols = [
 ];
 const slotWeights = ["cherry", "lemon", "orange", "grape", "bell", "watermelon", "bar", "seven", "cherry", "lemon", "orange", "grape", "wild", "scatter"];
 const paylines = [
-  [1, 1, 1, 1, 1],
-  [0, 0, 0, 0, 0],
-  [2, 2, 2, 2, 2],
-  [0, 1, 2, 1, 0],
-  [2, 1, 0, 1, 2],
-  [0, 0, 1, 2, 2],
-  [2, 2, 1, 0, 0],
-  [1, 0, 1, 2, 1],
+  { type: "horizontal", row: 0, label: "上橫線" },
+  { type: "horizontal", row: 1, label: "中橫線" },
+  { type: "horizontal", row: 2, label: "下橫線" },
+  { type: "vertical", reel: 0, label: "第 1 軸直線" },
+  { type: "vertical", reel: 1, label: "第 2 軸直線" },
+  { type: "vertical", reel: 2, label: "第 3 軸直線" },
+  { type: "vertical", reel: 3, label: "第 4 軸直線" },
+  { type: "vertical", reel: 4, label: "第 5 軸直線" },
 ];
 const slotState = {
   betPerLine: 10,
@@ -92,6 +92,7 @@ const slotState = {
   freeSpins: 0,
   pendingWin: 0,
   lastWin: 0,
+  leverPulled: false,
 };
 let slotCellEls = [];
 
@@ -180,13 +181,15 @@ function renderSlot() {
     button.disabled = !slotState.spinning || slotState.stopped[index];
   });
   document.getElementById("slotSpinBtn").disabled = slotState.spinning || slotState.pendingWin > 0;
+  document.getElementById("slotLeverBtn").disabled = slotState.spinning || slotState.pendingWin > 0;
+  document.getElementById("slotLeverBtn").classList.toggle("pulled", slotState.leverPulled);
   updateBalanceLabels();
 }
 
 function clearSlotTimers() {
   slotState.timers.forEach((timer) => {
-    clearInterval(timer);
-    clearTimeout(timer);
+    clearInterval(timer?.interval);
+    clearTimeout(timer?.timeout);
   });
   slotState.timers = [];
 }
@@ -239,15 +242,27 @@ function spinSlot() {
       renderSlot();
     }, 90);
     const timeout = setTimeout(() => stopSlotReel(index), 650 + index * 320);
-    slotState.timers.push(interval, timeout);
+    slotState.timers[index] = { interval, timeout };
   });
-  slotState.timers.push(setTimeout(forceFinishSlotSpin, 3200));
+  slotState.timers.push({ timeout: setTimeout(forceFinishSlotSpin, 3200) });
   renderSlot();
+}
+
+function pullSlotLever() {
+  if (slotState.spinning || slotState.pendingWin) return;
+  slotState.leverPulled = true;
+  renderSlot();
+  setTimeout(() => {
+    slotState.leverPulled = false;
+    renderSlot();
+    spinSlot();
+  }, 260);
 }
 
 function stopSlotReel(index) {
   if (!slotState.spinning || slotState.stopped[index]) return;
-  clearInterval(slotState.timers[index]);
+  clearInterval(slotState.timers[index]?.interval);
+  clearTimeout(slotState.timers[index]?.timeout);
   slotState.reels[index] = slotState.finalReels[index];
   slotState.stopped[index] = true;
   if (slotState.stopped.every(Boolean)) finishSlotSpin();
@@ -282,7 +297,7 @@ function evaluateSlotWin() {
   const winningLines = [];
   const activeLines = paylines.slice(0, slotState.lines);
   activeLines.forEach((line, lineIndex) => {
-    const symbols = line.map((row, reel) => slotState.reels[reel][row]);
+    const symbols = getPaylineSymbols(line);
     const result = evaluateLine(symbols);
     if (result.win > 0) {
       totalWin += result.win;
@@ -301,26 +316,36 @@ function evaluateSlotWin() {
   return { totalWin, winningLines, freeSpins, message: `${lineText}${scatterText}` };
 }
 
+function getPaylineSymbols(line) {
+  if (line.type === "horizontal") return slotState.reels.map((reel) => reel[line.row]);
+  return slotState.reels[line.reel];
+}
+
 function evaluateLine(symbols) {
   const target = symbols.find((symbol) => !symbol.wild && !symbol.scatter) || symbols[0];
   if (!target || target.scatter) return { win: 0 };
-  let count = 0;
-  for (const symbol of symbols) {
-    if (symbol.id === target.id || symbol.wild) count += 1;
-    else break;
-  }
-  if (count < 3) return { win: 0 };
+  const matched = symbols.every((symbol) => symbol.id === target.id || symbol.wild);
+  if (!matched) return { win: 0 };
+  const count = symbols.length;
   return { win: target.pays[count] * slotState.betPerLine };
 }
 
 function renderSlotLines(winningLines = []) {
   const board = document.getElementById("slotLineBoard");
+  const overlay = document.getElementById("slotWinLines");
   board.innerHTML = "";
-  paylines.forEach((_, index) => {
+  overlay.innerHTML = "";
+  paylines.forEach((line, index) => {
     const item = document.createElement("span");
     item.className = winningLines.includes(index) ? "hit" : "";
     item.textContent = index + 1;
+    item.title = line.label;
     board.appendChild(item);
+    if (winningLines.includes(index)) {
+      const mark = document.createElement("span");
+      mark.className = `win-line ${line.type === "horizontal" ? `line-h${line.row}` : `line-v${line.reel}`}`;
+      overlay.appendChild(mark);
+    }
   });
 }
 
@@ -1005,6 +1030,7 @@ promptActionsEl.querySelectorAll("button").forEach((button) => {
   button.addEventListener("click", () => handlePromptAction(button.dataset.promptAction));
 });
 document.getElementById("slotSpinBtn").addEventListener("click", spinSlot);
+document.getElementById("slotLeverBtn").addEventListener("click", pullSlotLever);
 document.getElementById("slotBetDownBtn").addEventListener("click", () => changeSlotBet(-5));
 document.getElementById("slotBetUpBtn").addEventListener("click", () => changeSlotBet(5));
 document.getElementById("slotLinesDownBtn").addEventListener("click", () => changeSlotLines(-1));
