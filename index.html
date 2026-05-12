@@ -94,8 +94,8 @@
           </div>
 
           <div class="portrait-notice">
-            <strong>請將手機轉為橫向遊玩麻將</strong>
-            <span>直立模式保留大廳、商城與規則瀏覽；麻將牌桌會在橫向模式開啟完整操作。</span>
+            <strong>直立模式已啟用</strong>
+            <span>手機直立也能摸牌、選牌、出牌；橫向會顯示更寬的牌桌視角。</span>
           </div>
 
           <div class="mahjong-layout">
@@ -118,6 +118,12 @@
 
             <div class="mahjong-stage">
               <div class="mahjong-table">
+                <div class="table-felt-text">台灣麻將</div>
+                <div class="score-board">
+                  <span>底分:20/番</span>
+                  <span>封頂:88番</span>
+                  <span id="roundRemain">剩牌:144張</span>
+                </div>
                 <div class="seat-marker seat-bottom current" data-wind="東">
                   <b>你</b><span id="playerSeatStatus">手牌 16</span>
                 </div>
@@ -134,19 +140,27 @@
                 <div class="wall wall-top" aria-hidden="true"></div>
                 <div class="wall wall-left" aria-hidden="true"></div>
                 <div class="wall wall-right" aria-hidden="true"></div>
+                <div class="wall wall-bottom" aria-hidden="true"></div>
+
+                <div class="opponent-hand opponent-top" id="opponentTop" aria-label="上家手牌"></div>
+                <div class="opponent-hand opponent-left" id="opponentLeft" aria-label="左家手牌"></div>
+                <div class="opponent-hand opponent-right" id="opponentRight" aria-label="右家手牌"></div>
 
                 <div class="discard-river" id="discardRiver">
                   <button class="dice" id="diceBox" type="button" aria-label="擲骰抽位起莊">骰</button>
                   <strong id="turnLabel">請先抽位起莊</strong>
                   <span id="lastDiscard">海底：無</span>
+                  <div class="river-tiles" id="riverTiles" aria-label="棄牌區"></div>
                 </div>
 
                 <div class="prompt-actions" id="promptActions" aria-label="可執行動作提示">
                   <button data-prompt-action="hu">胡</button>
+                  <button data-prompt-action="chi">吃</button>
                   <button data-prompt-action="pon">碰</button>
                   <button data-prompt-action="kan">槓</button>
                   <button data-prompt-action="ting">聽</button>
                   <button data-prompt-action="zimo">自摸</button>
+                  <button data-prompt-action="pass">過</button>
                 </div>
 
                 <div class="hand" id="playerHand" aria-label="玩家手牌"></div>

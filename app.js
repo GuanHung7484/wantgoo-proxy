@@ -23,6 +23,7 @@ const state = {
   selectedIndex: 0,
   dealer: null,
   lastDiscard: null,
+  river: [],
   lastDrawSelf: false,
   isTing: false,
   turn: "setup",
@@ -44,6 +45,12 @@ const handEl = document.getElementById("playerHand");
 const logEl = document.getElementById("gameLog");
 const aiSelect = document.getElementById("aiDifficulty");
 const promptActionsEl = document.getElementById("promptActions");
+const riverTilesEl = document.getElementById("riverTiles");
+const opponentEls = {
+  "玩家 A": document.getElementById("opponentLeft"),
+  "玩家 B": document.getElementById("opponentTop"),
+  "玩家 C": document.getElementById("opponentRight"),
+};
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => el.classList.toggle("active", key === name));
@@ -86,6 +93,7 @@ function startRound() {
   state.selectedIndex = 0;
   state.dealer = null;
   state.lastDiscard = null;
+  state.river = [];
   state.lastDrawSelf = false;
   state.isTing = false;
   state.turn = "setup";
@@ -160,6 +168,7 @@ function discardTile() {
   if (!state.hand.length) return;
   const [tile] = state.hand.splice(state.selectedIndex, 1);
   state.lastDiscard = tile;
+  state.river.push({ tile, from: "你" });
   state.lastDrawSelf = false;
   state.selectedIndex = Math.max(0, state.selectedIndex - 1);
   state.turn = "wait";
@@ -178,6 +187,7 @@ function simulateOpponentTurn() {
     const discardIndex = chooseOpponentDiscard(hand, mistake);
     const [discarded] = hand.splice(discardIndex, 1);
     state.lastDiscard = discarded;
+    state.river.push({ tile: discarded, from: name });
     const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
     log(`${name}（AI ${currentAi().label}）摸打一張，${thinking}：${discarded.label}。`);
   });
@@ -226,8 +236,14 @@ function claim(action) {
     log(`不能槓 ${state.lastDiscard.label}：手上未滿三張同牌。`);
     return;
   }
+  if (action === "吃" && !canChi()) {
+    log(`不能吃 ${state.lastDiscard.label}：手上沒有可組成順子的牌。`);
+    return;
+  }
   log(`${action}牌成立：以 ${state.lastDiscard.label} 組成面子。`);
+  state.river.pop();
   if (action === "碰") removeTilesFromHand(state.lastDiscard.label, 2);
+  if (action === "吃") removeSequenceForChi(state.lastDiscard);
   if (action === "槓") {
     removeTilesFromHand(state.lastDiscard.label, 3);
     if (state.wall.length) {
@@ -243,6 +259,7 @@ function claim(action) {
 
 function handlePromptAction(action) {
   if (action === "pon") claim("碰");
+  if (action === "chi") claim("吃");
   if (action === "kan") {
     if (state.lastDiscard) claim("槓");
     else concealedKan();
@@ -254,6 +271,27 @@ function handlePromptAction(action) {
     log("聽牌提示成立：你已進入聽牌狀態，接下來可等胡或自摸。");
     render();
   }
+  if (action === "pass") {
+    log("你選擇過，不吃碰槓胡。");
+    state.lastDiscard = null;
+    render();
+  }
+}
+
+function removeSequenceForChi(discarded) {
+  const candidates = [
+    [discarded.rank - 2, discarded.rank - 1],
+    [discarded.rank - 1, discarded.rank + 1],
+    [discarded.rank + 1, discarded.rank + 2],
+  ];
+  const match = candidates.find((ranks) =>
+    ranks.every((rank) => state.hand.some((tile) => tile.suit === discarded.suit && tile.rank === rank)),
+  );
+  if (!match) return;
+  match.forEach((rank) => {
+    const index = state.hand.findIndex((tile) => tile.suit === discarded.suit && tile.rank === rank);
+    if (index >= 0) state.hand.splice(index, 1);
+  });
 }
 
 function concealedKan() {
@@ -304,11 +342,25 @@ function removeTilesFromHand(label, amount) {
 function getAvailablePrompts() {
   return {
     hu: canHuDiscard(),
+    chi: canChi(),
     pon: canPon(),
     kan: canKan(),
     ting: canTing(),
     zimo: canSelfDraw(),
+    pass: Boolean(state.lastDiscard) && state.turn !== "finished",
   };
+}
+
+function canChi() {
+  if (!state.lastDiscard || state.turn === "finished") return false;
+  if (state.lastDiscard.suit === "字" || state.lastDiscard.suit === "花") return false;
+  const ranks = state.hand.filter((tile) => tile.suit === state.lastDiscard.suit).map((tile) => tile.rank);
+  const rank = state.lastDiscard.rank;
+  return (
+    (ranks.includes(rank - 2) && ranks.includes(rank - 1)) ||
+    (ranks.includes(rank - 1) && ranks.includes(rank + 1)) ||
+    (ranks.includes(rank + 1) && ranks.includes(rank + 2))
+  );
 }
 
 function canPon() {
@@ -388,12 +440,17 @@ function render() {
     button.type = "button";
     button.appendChild(createTileFace(tile));
     button.addEventListener("click", () => {
+      if (state.selectedIndex === index && state.hand.length >= 17) {
+        discardTile();
+        return;
+      }
       state.selectedIndex = index;
       render();
     });
     handEl.appendChild(button);
   });
   document.getElementById("wallLabel").textContent = `牌牆：${state.wall.length}`;
+  document.getElementById("roundRemain").textContent = `剩牌:${state.wall.length}張`;
   document.getElementById("dealerLabel").textContent = `莊家：${state.dealer || "抽位中"}`;
   document.getElementById("lastDiscard").textContent = `海底：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
   document.getElementById("turnLabel").textContent = getTurnText();
@@ -401,7 +458,32 @@ function render() {
   document.querySelectorAll(".seat-marker").forEach((seat) => {
     seat.classList.toggle("dealer-seat", seat.dataset.wind === state.dealer);
   });
+  renderOpponents();
+  renderRiver();
   renderPromptActions();
+}
+
+function renderOpponents() {
+  Object.entries(opponentEls).forEach(([name, el]) => {
+    el.innerHTML = "";
+    const count = state.opponents[name]?.length || 0;
+    for (let index = 0; index < count; index += 1) {
+      const back = document.createElement("span");
+      back.className = "tile-back";
+      el.appendChild(back);
+    }
+  });
+}
+
+function renderRiver() {
+  riverTilesEl.innerHTML = "";
+  state.river.slice(-24).forEach(({ tile, from }) => {
+    const item = document.createElement("span");
+    item.className = `river-tile from-${from === "你" ? "self" : "ai"}`;
+    item.title = `${from}打出 ${tile.label}`;
+    item.appendChild(createTileFace(tile));
+    riverTilesEl.appendChild(item);
+  });
 }
 
 function createTileFace(tile) {
