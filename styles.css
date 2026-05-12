@@ -1529,43 +1529,43 @@ main {
   }
 
   .slot-machine {
-    padding: 14px 14px 74px;
+    padding: 14px 58px 14px 14px;
   }
 
   .slot-lever {
-    top: auto;
-    right: 18px;
-    bottom: 8px;
-    width: 96px;
-    height: 54px;
+    top: 106px;
+    right: 9px;
+    bottom: auto;
+    width: 40px;
+    height: 250px;
   }
 
   .lever-bar {
-    top: 23px;
-    width: 58px;
-    height: 8px;
+    top: 36px;
+    width: 9px;
+    height: 158px;
   }
 
   .lever-knob {
-    top: 9px;
-    left: 10px;
-    width: 34px;
-    height: 34px;
+    top: 0;
+    left: auto;
+    width: 36px;
+    height: 36px;
   }
 
   .lever-base {
-    right: 4px;
-    bottom: 10px;
+    right: auto;
+    bottom: 20px;
     width: 34px;
     height: 34px;
   }
 
   .slot-lever.pulled .lever-knob {
-    transform: translateX(44px);
+    transform: translateY(118px);
   }
 
   .slot-lever.pulled .lever-bar {
-    transform: translateX(18px) scaleX(0.72);
+    transform: translateY(58px) scaleY(0.72);
   }
 
   .slot-reel {
