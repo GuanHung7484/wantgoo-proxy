@@ -1,6 +1,7 @@
 const views = {
   lobby: document.getElementById("lobbyView"),
   mahjong: document.getElementById("mahjongView"),
+  slot: document.getElementById("slotView"),
   store: document.getElementById("storeView"),
   rules: document.getElementById("rulesView"),
 };
@@ -27,6 +28,8 @@ const state = {
   lastDrawSelf: false,
   isTing: false,
   turn: "setup",
+  currentPlayer: "你",
+  lastDiscardFrom: null,
   balance: 1750,
   aiDifficulty: "easy",
 };
@@ -40,6 +43,9 @@ const honors = ["東", "南", "西", "北", "中", "發", "白"];
 const flowers = ["春", "夏", "秋", "冬", "梅", "蘭", "竹", "菊"];
 const winds = ["東", "南", "西", "北"];
 const chineseRanks = ["一", "二", "三", "四", "伍", "六", "七", "八", "九"];
+const turnOrder = ["你", "玩家 A", "玩家 B", "玩家 C"];
+const windByPlayer = { 你: "東", "玩家 A": "南", "玩家 B": "西", "玩家 C": "北" };
+const playerByWind = { 東: "你", 南: "玩家 A", 西: "玩家 B", 北: "玩家 C" };
 
 const handEl = document.getElementById("playerHand");
 const logEl = document.getElementById("gameLog");
@@ -52,11 +58,259 @@ const opponentEls = {
   "玩家 C": document.getElementById("opponentRight"),
 };
 
+const slotSymbols = [
+  { id: "seven", label: "777", icon: "777", pays: { 3: 80, 4: 260, 5: 1000 } },
+  { id: "bar", label: "BAR", icon: "BAR", pays: { 3: 55, 4: 180, 5: 750 } },
+  { id: "watermelon", label: "西瓜", icon: "🍉", pays: { 3: 35, 4: 100, 5: 400 } },
+  { id: "bell", label: "鈴鐺", icon: "🔔", pays: { 3: 25, 4: 75, 5: 250 } },
+  { id: "grape", label: "葡萄", icon: "🍇", pays: { 3: 20, 4: 60, 5: 180 } },
+  { id: "orange", label: "柳丁", icon: "🍊", pays: { 3: 16, 4: 45, 5: 140 } },
+  { id: "cherry", label: "櫻桃", icon: "🍒", pays: { 3: 10, 4: 30, 5: 90 } },
+  { id: "lemon", label: "檸檬", icon: "🍋", pays: { 3: 8, 4: 24, 5: 70 } },
+  { id: "wild", label: "WILD", icon: "WILD", wild: true, pays: { 3: 100, 4: 360, 5: 1500 } },
+  { id: "scatter", label: "SCATTER", icon: "★", scatter: true, pays: { 3: 20, 4: 80, 5: 240 } },
+];
+const slotWeights = ["cherry", "lemon", "orange", "grape", "bell", "watermelon", "bar", "seven", "cherry", "lemon", "orange", "grape", "wild", "scatter"];
+const paylines = [
+  [1, 1, 1, 1, 1],
+  [0, 0, 0, 0, 0],
+  [2, 2, 2, 2, 2],
+  [0, 1, 2, 1, 0],
+  [2, 1, 0, 1, 2],
+  [0, 0, 1, 2, 2],
+  [2, 2, 1, 0, 0],
+  [1, 0, 1, 2, 1],
+];
+const slotState = {
+  betPerLine: 10,
+  lines: 8,
+  reels: [],
+  finalReels: [],
+  spinning: false,
+  stopped: [true, true, true, true, true],
+  timers: [],
+  freeSpins: 0,
+  pendingWin: 0,
+  lastWin: 0,
+};
+
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => el.classList.toggle("active", key === name));
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === name && button.classList.contains("rail-btn"));
   });
+}
+
+function updateBalanceLabels() {
+  const value = state.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById("coinBalance").textContent = value;
+  document.getElementById("storeBalance").textContent = value;
+  document.getElementById("slotCreditLabel").textContent = `點數：${value}`;
+}
+
+function symbolById(id) {
+  return slotSymbols.find((symbol) => symbol.id === id);
+}
+
+function randomSlotSymbol() {
+  return symbolById(slotWeights[Math.floor(Math.random() * slotWeights.length)]);
+}
+
+function buildSlotReels() {
+  return Array.from({ length: 5 }, () => Array.from({ length: 3 }, randomSlotSymbol));
+}
+
+function initSlot() {
+  slotState.reels = buildSlotReels();
+  renderSlot();
+  renderSlotLines();
+  renderPaytable();
+  slotLog("水果拉霸已開機，選擇線數與單線注後開始。");
+}
+
+function renderSlot() {
+  const reelsEl = document.getElementById("slotReels");
+  reelsEl.innerHTML = "";
+  slotState.reels.forEach((reel, reelIndex) => {
+    const reelEl = document.createElement("div");
+    reelEl.className = `slot-reel${slotState.spinning && !slotState.stopped[reelIndex] ? " spinning" : ""}`;
+    reel.forEach((symbol) => {
+      const cell = document.createElement("div");
+      cell.className = `slot-symbol symbol-${symbol.id}`;
+      cell.textContent = symbol.icon;
+      cell.title = symbol.label;
+      reelEl.appendChild(cell);
+    });
+    reelsEl.appendChild(reelEl);
+  });
+  document.getElementById("slotLinesLabel").textContent = slotState.lines;
+  document.getElementById("slotBetLabel").textContent = slotState.betPerLine;
+  document.getElementById("slotFreeLabel").textContent = `免費局：${slotState.freeSpins}`;
+  document.getElementById("slotWinLabel").textContent = `本局：${slotState.lastWin}`;
+  document.getElementById("slotResult").textContent = slotState.pendingWin
+    ? `可收分 ${slotState.pendingWin}，也可挑戰比倍。`
+    : slotState.spinning
+      ? "轉輪旋轉中，可手動停止各軸。"
+      : `總注 ${slotState.lines * slotState.betPerLine}，按 SPIN 開始。`;
+  document.getElementById("gambleBox").classList.toggle("active", slotState.pendingWin > 0 && !slotState.spinning);
+  document.querySelectorAll("[data-stop-reel]").forEach((button) => {
+    const index = Number(button.dataset.stopReel);
+    button.disabled = !slotState.spinning || slotState.stopped[index];
+  });
+  document.getElementById("slotSpinBtn").disabled = slotState.spinning || slotState.pendingWin > 0;
+  updateBalanceLabels();
+}
+
+function renderPaytable() {
+  const table = document.getElementById("slotPaytable");
+  table.innerHTML = "";
+  slotSymbols.forEach((symbol) => {
+    const row = document.createElement("div");
+    row.className = "pay-row";
+    row.innerHTML = `<span>${symbol.icon}</span><b>${symbol.label}</b><em>3:${symbol.pays[3]}x / 4:${symbol.pays[4]}x / 5:${symbol.pays[5]}x</em>`;
+    table.appendChild(row);
+  });
+}
+
+function changeSlotBet(delta) {
+  if (slotState.spinning || slotState.pendingWin) return;
+  slotState.betPerLine = Math.min(100, Math.max(1, slotState.betPerLine + delta));
+  renderSlot();
+}
+
+function changeSlotLines(delta) {
+  if (slotState.spinning || slotState.pendingWin) return;
+  slotState.lines = Math.min(8, Math.max(1, slotState.lines + delta));
+  renderSlot();
+}
+
+function spinSlot() {
+  if (slotState.spinning || slotState.pendingWin) return;
+  const totalBet = slotState.betPerLine * slotState.lines;
+  const freeSpin = slotState.freeSpins > 0;
+  if (!freeSpin && state.balance < totalBet) {
+    slotLog("點數不足，請降低注額或到商城補點。");
+    return;
+  }
+  if (freeSpin) slotState.freeSpins -= 1;
+  else state.balance -= totalBet;
+  slotState.spinning = true;
+  slotState.stopped = [false, false, false, false, false];
+  slotState.finalReels = buildSlotReels();
+  slotState.lastWin = 0;
+  slotState.pendingWin = 0;
+  renderSlotLines();
+  slotLog(`${freeSpin ? "免費局" : "下注"} ${totalBet}，轉輪開始。`);
+
+  slotState.timers = slotState.reels.map((_, index) =>
+    setInterval(() => {
+      slotState.reels[index] = Array.from({ length: 3 }, randomSlotSymbol);
+      renderSlot();
+    }, 90),
+  );
+  slotState.reels.forEach((_, index) => {
+    setTimeout(() => stopSlotReel(index), 650 + index * 320);
+  });
+  renderSlot();
+}
+
+function stopSlotReel(index) {
+  if (!slotState.spinning || slotState.stopped[index]) return;
+  clearInterval(slotState.timers[index]);
+  slotState.reels[index] = slotState.finalReels[index];
+  slotState.stopped[index] = true;
+  if (slotState.stopped.every(Boolean)) finishSlotSpin();
+  renderSlot();
+}
+
+function finishSlotSpin() {
+  slotState.spinning = false;
+  const result = evaluateSlotWin();
+  slotState.lastWin = result.totalWin;
+  slotState.pendingWin = result.totalWin;
+  if (result.freeSpins) slotState.freeSpins += result.freeSpins;
+  renderSlotLines(result.winningLines);
+  if (result.totalWin > 0) {
+    slotLog(`中獎 ${result.totalWin}，${result.message}`);
+  } else {
+    slotLog("未中獎，請再試一把。");
+  }
+}
+
+function evaluateSlotWin() {
+  let totalWin = 0;
+  const winningLines = [];
+  const activeLines = paylines.slice(0, slotState.lines);
+  activeLines.forEach((line, lineIndex) => {
+    const symbols = line.map((row, reel) => slotState.reels[reel][row]);
+    const result = evaluateLine(symbols);
+    if (result.win > 0) {
+      totalWin += result.win;
+      winningLines.push(lineIndex);
+    }
+  });
+  const scatterCount = slotState.reels.flat().filter((symbol) => symbol.scatter).length;
+  let freeSpins = 0;
+  if (scatterCount >= 3) {
+    const scatterPay = symbolById("scatter").pays[Math.min(scatterCount, 5)] * slotState.betPerLine;
+    totalWin += scatterPay;
+    freeSpins = scatterCount + 2;
+  }
+  const lineText = winningLines.length ? `${winningLines.length} 條線中獎` : "Scatter 獎勵";
+  const scatterText = freeSpins ? `，觸發 ${freeSpins} 次免費局` : "";
+  return { totalWin, winningLines, freeSpins, message: `${lineText}${scatterText}` };
+}
+
+function evaluateLine(symbols) {
+  const target = symbols.find((symbol) => !symbol.wild && !symbol.scatter) || symbols[0];
+  if (!target || target.scatter) return { win: 0 };
+  let count = 0;
+  for (const symbol of symbols) {
+    if (symbol.id === target.id || symbol.wild) count += 1;
+    else break;
+  }
+  if (count < 3) return { win: 0 };
+  return { win: target.pays[count] * slotState.betPerLine };
+}
+
+function renderSlotLines(winningLines = []) {
+  const board = document.getElementById("slotLineBoard");
+  board.innerHTML = "";
+  paylines.forEach((_, index) => {
+    const item = document.createElement("span");
+    item.className = winningLines.includes(index) ? "hit" : "";
+    item.textContent = index + 1;
+    board.appendChild(item);
+  });
+}
+
+function collectSlotWin() {
+  if (!slotState.pendingWin) return;
+  state.balance += slotState.pendingWin;
+  slotLog(`收分 ${slotState.pendingWin}。`);
+  slotState.pendingWin = 0;
+  renderSlot();
+}
+
+function gambleSlot(choice) {
+  if (!slotState.pendingWin || slotState.spinning) return;
+  const result = Math.random() < 0.5 ? "red" : "black";
+  if (choice === result) {
+    slotState.pendingWin *= 2;
+    slotLog(`比倍猜中 ${result === "red" ? "紅" : "黑"}，獎金變 ${slotState.pendingWin}。`);
+  } else {
+    slotLog(`比倍猜錯，開出 ${result === "red" ? "紅" : "黑"}，本次獎金歸零。`);
+    slotState.pendingWin = 0;
+    slotState.lastWin = 0;
+  }
+  renderSlot();
+}
+
+function slotLog(message) {
+  const list = document.getElementById("slotLog");
+  const item = document.createElement("li");
+  item.textContent = message;
+  list.prepend(item);
 }
 
 function buildWall() {
@@ -97,6 +351,8 @@ function startRound() {
   state.lastDrawSelf = false;
   state.isTing = false;
   state.turn = "setup";
+  state.currentPlayer = "你";
+  state.lastDiscardFrom = null;
   logEl.innerHTML = "";
   log(`新局建立：AI 強度為 ${currentAi().label}，失誤率 ${currentAi().mistakeRate}%。請先抽位與起莊。`);
   render();
@@ -127,10 +383,13 @@ function drawSeatAndDealer() {
   const diceA = Math.ceil(Math.random() * 6);
   const diceB = Math.ceil(Math.random() * 6);
   state.dealer = dealerWind;
-  state.turn = "dealer";
+  state.currentPlayer = playerByWind[dealerWind];
+  state.turn = state.currentPlayer === "你" ? "player" : "ai";
+  state.lastDrawSelf = state.currentPlayer === "你";
   document.getElementById("diceBox").textContent = diceA + diceB;
   log(`抽位完成：你坐東位，莊家為 ${dealerWind}，擲骰 ${diceA}+${diceB} 決定開門。`);
   log(dealerWind === "東" ? "你是莊家，先出一張牌。" : "由莊家先打，接著逆時針摸牌出牌。");
+  if (state.currentPlayer !== "你") advanceAiTurns(false);
   render();
 }
 
@@ -147,9 +406,18 @@ function drawTile() {
     log("牌牆已摸完，本局流局。");
     return;
   }
-  if (state.hand.length >= 17) {
-    log("手牌已有 17 張，請先出牌。");
+  if (state.lastDrawSelf) {
+    log("目前需要先出牌。");
     return;
+  }
+  if (state.currentPlayer !== "你") {
+    log("目前還沒輪到你，請等電腦出完牌。");
+    return;
+  }
+  if (state.lastDiscard && state.lastDiscardFrom !== "你") {
+    log(`你放棄 ${state.lastDiscard.label} 的吃碰槓胡，改為摸牌。`);
+    state.lastDiscard = null;
+    state.lastDiscardFrom = null;
   }
   const tile = state.wall.shift();
   state.hand.push(tile);
@@ -161,37 +429,135 @@ function drawTile() {
 }
 
 function discardTile() {
+  if (!state.dealer) {
+    log("尚未抽位起莊，請先按「骰子 / 起莊」。");
+    return;
+  }
   if (state.turn === "finished") {
     log("本局已結束，請重新開局。");
+    return;
+  }
+  if (state.currentPlayer !== "你") {
+    log("目前還沒輪到你出牌。");
     return;
   }
   if (!state.hand.length) return;
   const [tile] = state.hand.splice(state.selectedIndex, 1);
   state.lastDiscard = tile;
+  state.lastDiscardFrom = "你";
   state.river.push({ tile, from: "你" });
   state.lastDrawSelf = false;
   state.selectedIndex = Math.max(0, state.selectedIndex - 1);
   state.turn = "wait";
   log(`你打出 ${tile.label}。電腦依目前 AI 強度思考。`);
-  simulateOpponentTurn();
+  const claimedBy = tryAiClaim(tile, "你");
+  if (claimedBy) {
+    state.currentPlayer = claimedBy;
+    advanceAiTurns(false);
+  } else {
+    state.currentPlayer = nextPlayer("你");
+    advanceAiTurns(true);
+  }
   render();
 }
 
-function simulateOpponentTurn() {
-  const names = Object.keys(state.opponents);
-  names.forEach((name) => {
-    if (!state.wall.length) return;
-    const hand = state.opponents[name];
+function nextPlayer(name) {
+  return turnOrder[(turnOrder.indexOf(name) + 1) % turnOrder.length];
+}
+
+function advanceAiTurns(shouldDraw) {
+  let drawBeforeDiscard = shouldDraw;
+  while (state.currentPlayer !== "你" && state.turn !== "finished") {
+    if (!playAiTurn(state.currentPlayer, drawBeforeDiscard)) break;
+    drawBeforeDiscard = true;
+  }
+  if (state.currentPlayer === "你" && state.turn !== "finished") {
+    state.turn = "player";
+    if (state.lastDiscard && state.lastDiscardFrom !== "你") {
+      log("輪到你：可先吃、碰、槓、胡，或按過後再摸牌。");
+    } else {
+      log("輪到你摸牌。");
+    }
+  }
+}
+
+function playAiTurn(name, shouldDraw) {
+  const hand = state.opponents[name];
+  if (!hand) return false;
+  if (shouldDraw) {
+    if (!state.wall.length) {
+      log("牌牆已摸完，本局流局。");
+      state.turn = "finished";
+      return false;
+    }
     hand.push(state.wall.shift());
-    const mistake = Math.random() * 100 < currentAi().mistakeRate;
-    const discardIndex = chooseOpponentDiscard(hand, mistake);
-    const [discarded] = hand.splice(discardIndex, 1);
-    state.lastDiscard = discarded;
-    state.river.push({ tile: discarded, from: name });
-    const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
-    log(`${name}（AI ${currentAi().label}）摸打一張，${thinking}：${discarded.label}。`);
+  }
+  const mistake = Math.random() * 100 < currentAi().mistakeRate;
+  const discardIndex = chooseOpponentDiscard(hand, mistake);
+  const [discarded] = hand.splice(discardIndex, 1);
+  state.lastDiscard = discarded;
+  state.lastDiscardFrom = name;
+  state.river.push({ tile: discarded, from: name });
+  const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
+  log(`${name}（AI ${currentAi().label}）${shouldDraw ? "摸打一張" : "莊家先打"}，${thinking}：${discarded.label}。`);
+
+  const claimedBy = tryAiClaim(discarded, name);
+  state.currentPlayer = claimedBy || nextPlayer(name);
+  return true;
+}
+
+function tryAiClaim(discarded, from) {
+  const candidates = turnOrder.filter((name) => name !== "你" && name !== from);
+  const claim = candidates
+    .map((name) => getAiClaim(name, discarded, from))
+    .find(Boolean);
+  if (!claim) return null;
+
+  state.river.pop();
+  state.lastDiscard = null;
+  state.lastDiscardFrom = null;
+  if (claim.action === "槓") removeTilesFromOpponent(claim.player, discarded.label, 3);
+  if (claim.action === "碰") removeTilesFromOpponent(claim.player, discarded.label, 2);
+  if (claim.action === "吃") removeOpponentSequenceForChi(claim.player, discarded);
+  if (claim.action === "槓" && state.wall.length) {
+    state.opponents[claim.player].push(state.wall.pop());
+  }
+  log(`${claim.player}（AI ${currentAi().label}）${claim.action} ${discarded.label}，接著出牌。`);
+  return claim.player;
+}
+
+function getAiClaim(name, discarded, from) {
+  const hand = state.opponents[name];
+  const mistake = Math.random() * 100 < currentAi().mistakeRate;
+  const sameCount = hand.filter((tile) => tile.label === discarded.label).length;
+  const canAiKan = sameCount >= 3;
+  const canAiPon = sameCount >= 2;
+  const canAiChi = nextPlayer(from) === name && canHandChi(hand, discarded);
+  if (canAiKan && (!mistake || Math.random() < 0.35)) return { player: name, action: "槓" };
+  if (canAiPon && (!mistake || Math.random() < 0.55)) return { player: name, action: "碰" };
+  if (canAiChi && (!mistake || Math.random() < 0.5)) return { player: name, action: "吃" };
+  return null;
+}
+
+function removeTilesFromOpponent(name, label, amount) {
+  let removed = 0;
+  state.opponents[name] = state.opponents[name].filter((tile) => {
+    if (tile.label === label && removed < amount) {
+      removed += 1;
+      return false;
+    }
+    return true;
   });
-  state.turn = "player";
+}
+
+function removeOpponentSequenceForChi(name, discarded) {
+  const hand = state.opponents[name];
+  const match = findChiRanks(hand, discarded);
+  if (!match) return;
+  match.forEach((rank) => {
+    const index = hand.findIndex((tile) => tile.suit === discarded.suit && tile.rank === rank);
+    if (index >= 0) hand.splice(index, 1);
+  });
 }
 
 function chooseOpponentDiscard(hand, mistake) {
@@ -253,7 +619,11 @@ function claim(action) {
     }
   }
   state.lastDiscard = null;
-  state.lastDrawSelf = false;
+  state.lastDiscardFrom = null;
+  state.lastDrawSelf = true;
+  state.currentPlayer = "你";
+  state.turn = "player";
+  log("輪到你出牌。");
   render();
 }
 
@@ -274,24 +644,34 @@ function handlePromptAction(action) {
   if (action === "pass") {
     log("你選擇過，不吃碰槓胡。");
     state.lastDiscard = null;
+    state.lastDiscardFrom = null;
     render();
   }
 }
 
 function removeSequenceForChi(discarded) {
-  const candidates = [
-    [discarded.rank - 2, discarded.rank - 1],
-    [discarded.rank - 1, discarded.rank + 1],
-    [discarded.rank + 1, discarded.rank + 2],
-  ];
-  const match = candidates.find((ranks) =>
-    ranks.every((rank) => state.hand.some((tile) => tile.suit === discarded.suit && tile.rank === rank)),
-  );
+  const match = findChiRanks(state.hand, discarded);
   if (!match) return;
   match.forEach((rank) => {
     const index = state.hand.findIndex((tile) => tile.suit === discarded.suit && tile.rank === rank);
     if (index >= 0) state.hand.splice(index, 1);
   });
+}
+
+function findChiRanks(hand, discarded) {
+  const candidates = [
+    [discarded.rank - 2, discarded.rank - 1],
+    [discarded.rank - 1, discarded.rank + 1],
+    [discarded.rank + 1, discarded.rank + 2],
+  ];
+  return candidates.find((ranks) =>
+    ranks.every((rank) => rank >= 1 && rank <= 9 && hand.some((tile) => tile.suit === discarded.suit && tile.rank === rank)),
+  );
+}
+
+function canHandChi(hand, discarded) {
+  if (!discarded || discarded.suit === "字" || discarded.suit === "花") return false;
+  return Boolean(findChiRanks(hand, discarded));
 }
 
 function concealedKan() {
@@ -353,14 +733,8 @@ function getAvailablePrompts() {
 
 function canChi() {
   if (!state.lastDiscard || state.turn === "finished") return false;
-  if (state.lastDiscard.suit === "字" || state.lastDiscard.suit === "花") return false;
-  const ranks = state.hand.filter((tile) => tile.suit === state.lastDiscard.suit).map((tile) => tile.rank);
-  const rank = state.lastDiscard.rank;
-  return (
-    (ranks.includes(rank - 2) && ranks.includes(rank - 1)) ||
-    (ranks.includes(rank - 1) && ranks.includes(rank + 1)) ||
-    (ranks.includes(rank + 1) && ranks.includes(rank + 2))
-  );
+  if (nextPlayer(state.lastDiscardFrom) !== "你") return false;
+  return canHandChi(state.hand, state.lastDiscard);
 }
 
 function canPon() {
@@ -451,7 +825,8 @@ function render() {
   });
   document.getElementById("wallLabel").textContent = `牌牆：${state.wall.length}`;
   document.getElementById("roundRemain").textContent = `剩牌:${state.wall.length}張`;
-  document.getElementById("dealerLabel").textContent = `莊家：${state.dealer || "抽位中"}`;
+  const dealerPlayer = state.dealer ? playerByWind[state.dealer] : "";
+  document.getElementById("dealerLabel").textContent = `莊家：${state.dealer ? `${dealerPlayer}（${state.dealer}）` : "抽位中"}`;
   document.getElementById("lastDiscard").textContent = `海底：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
   document.getElementById("turnLabel").textContent = getTurnText();
   document.getElementById("playerSeatStatus").textContent = state.isTing ? `聽牌 ${state.hand.length}` : `手牌 ${state.hand.length}`;
@@ -554,7 +929,7 @@ function renderFlower(face, label) {
 function getTurnText() {
   if (state.turn === "finished") return "本局已結束，請重新開局";
   if (!state.dealer) return "請先抽位起莊";
-  if (state.hand.length === 17) return "請選一張牌打出，或使用跳出的胡 / 自摸提示";
+  if (state.lastDrawSelf) return "請選一張牌打出，或使用跳出的胡 / 自摸提示";
   if (state.lastDiscard) return "若條件成立，動作提示會在手牌上方跳出";
   return "輪到你摸牌";
 }
@@ -589,16 +964,28 @@ aiSelect.addEventListener("change", (event) => setAiDifficulty(event.target.valu
 promptActionsEl.querySelectorAll("button").forEach((button) => {
   button.addEventListener("click", () => handlePromptAction(button.dataset.promptAction));
 });
+document.getElementById("slotSpinBtn").addEventListener("click", spinSlot);
+document.getElementById("slotBetDownBtn").addEventListener("click", () => changeSlotBet(-5));
+document.getElementById("slotBetUpBtn").addEventListener("click", () => changeSlotBet(5));
+document.getElementById("slotLinesDownBtn").addEventListener("click", () => changeSlotLines(-1));
+document.getElementById("slotLinesUpBtn").addEventListener("click", () => changeSlotLines(1));
+document.getElementById("slotCollectBtn").addEventListener("click", collectSlotWin);
+document.querySelectorAll("[data-stop-reel]").forEach((button) => {
+  button.addEventListener("click", () => stopSlotReel(Number(button.dataset.stopReel)));
+});
+document.querySelectorAll("[data-gamble]").forEach((button) => {
+  button.addEventListener("click", () => gambleSlot(button.dataset.gamble));
+});
 
 document.querySelectorAll(".payment-grid button").forEach((button, index) => {
   button.addEventListener("click", () => {
     const bonus = 100 + index * 20;
     state.balance += bonus;
-    const value = state.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    document.getElementById("coinBalance").textContent = value;
-    document.getElementById("storeBalance").textContent = value;
+    updateBalanceLabels();
   });
 });
 
 setAiDifficulty(state.aiDifficulty);
 startRound();
+initSlot();
+updateBalanceLabels();

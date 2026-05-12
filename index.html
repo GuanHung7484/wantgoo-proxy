@@ -30,6 +30,7 @@
       <nav class="rail" aria-label="主要導覽">
         <button class="rail-btn active" data-view="lobby"><span>⌂</span>大廳</button>
         <button class="rail-btn" data-view="mahjong"><span>將</span>麻將</button>
+        <button class="rail-btn" data-view="slot"><span>777</span>拉霸</button>
         <button class="rail-btn" data-view="store"><span>◆</span>儲值</button>
         <button class="rail-btn" data-view="rules"><span>?</span>規則</button>
       </nav>
@@ -71,12 +72,78 @@
               <p>下一款牌桌遊戲預留欄位。</p>
               <button disabled>尚未開放</button>
             </article>
-            <article class="game-card locked">
-              <div class="card-badge">籌備中</div>
+            <article class="game-card slot-card">
+              <div class="card-badge">新開放</div>
               <h2>水果拉霸</h2>
-              <p>保留給後續多款式遊戲擴充。</p>
-              <button disabled>尚未開放</button>
+              <p>5 軸 3 列、8 條線、Wild、Scatter、免費局與比倍遊戲。</p>
+              <button data-view="slot">開始旋轉</button>
             </article>
+          </div>
+        </section>
+
+        <section class="view slot-view" id="slotView">
+          <div class="slot-head">
+            <div>
+              <span class="eyebrow">Fruit Slot</span>
+              <h2>水果拉霸機</h2>
+            </div>
+            <div class="round-status">
+              <span id="slotCreditLabel">點數：1,750.00</span>
+              <span id="slotFreeLabel">免費局：0</span>
+              <span id="slotWinLabel">本局：0</span>
+            </div>
+          </div>
+
+          <div class="slot-layout">
+            <div class="slot-machine" aria-label="水果拉霸機">
+              <div class="slot-marquee">
+                <span>BBS8.NET</span>
+                <strong>彩金 398843</strong>
+                <span>BBS8.NET</span>
+              </div>
+              <div class="slot-reels" id="slotReels" aria-live="polite"></div>
+              <div class="slot-line-board" id="slotLineBoard"></div>
+              <div class="slot-controls">
+                <div class="slot-meter">
+                  <span>線數</span>
+                  <strong id="slotLinesLabel">8</strong>
+                </div>
+                <button id="slotLinesDownBtn" type="button">-</button>
+                <button id="slotLinesUpBtn" type="button">+</button>
+                <div class="slot-meter">
+                  <span>單線注</span>
+                  <strong id="slotBetLabel">10</strong>
+                </div>
+                <button id="slotBetDownBtn" type="button">-</button>
+                <button id="slotBetUpBtn" type="button">+</button>
+                <button class="spin-btn" id="slotSpinBtn" type="button">SPIN</button>
+              </div>
+              <div class="slot-stop-row">
+                <button data-stop-reel="0" type="button">停 1</button>
+                <button data-stop-reel="1" type="button">停 2</button>
+                <button data-stop-reel="2" type="button">停 3</button>
+                <button data-stop-reel="3" type="button">停 4</button>
+                <button data-stop-reel="4" type="button">停 5</button>
+              </div>
+            </div>
+
+            <aside class="slot-panel">
+              <div class="slot-result" id="slotResult">設定注額後按 SPIN。</div>
+              <div class="gamble-box" id="gambleBox">
+                <strong>比倍遊戲</strong>
+                <span>猜紅黑，猜中獎金翻倍，猜錯本次獎金歸零。</span>
+                <div>
+                  <button data-gamble="red" type="button">紅</button>
+                  <button data-gamble="black" type="button">黑</button>
+                  <button id="slotCollectBtn" type="button">收分</button>
+                </div>
+              </div>
+              <div class="paytable">
+                <h3>賠率表</h3>
+                <div id="slotPaytable"></div>
+              </div>
+              <ol class="slot-log" id="slotLog"></ol>
+            </aside>
           </div>
         </section>
 
