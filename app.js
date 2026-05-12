@@ -93,6 +93,7 @@ const slotState = {
   pendingWin: 0,
   lastWin: 0,
 };
+let slotCellEls = [];
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => el.classList.toggle("active", key === name));
@@ -122,26 +123,47 @@ function buildSlotReels() {
 
 function initSlot() {
   slotState.reels = buildSlotReels();
+  createSlotFrame();
   renderSlot();
   renderSlotLines();
   renderPaytable();
   slotLog("水果拉霸已開機，選擇線數與單線注後開始。");
 }
 
-function renderSlot() {
+function createSlotFrame() {
   const reelsEl = document.getElementById("slotReels");
   reelsEl.innerHTML = "";
-  slotState.reels.forEach((reel, reelIndex) => {
+  slotCellEls = [];
+  for (let reelIndex = 0; reelIndex < 5; reelIndex += 1) {
     const reelEl = document.createElement("div");
-    reelEl.className = `slot-reel${slotState.spinning && !slotState.stopped[reelIndex] ? " spinning" : ""}`;
-    reel.forEach((symbol) => {
+    reelEl.className = "slot-reel";
+    reelEl.dataset.reel = reelIndex;
+    slotCellEls[reelIndex] = [];
+    for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
       const cell = document.createElement("div");
+      cell.className = "slot-symbol symbol-cherry";
+      cell.textContent = "🍒";
+      cell.dataset.reel = reelIndex;
+      cell.dataset.row = rowIndex;
+      reelEl.appendChild(cell);
+      slotCellEls[reelIndex][rowIndex] = cell;
+    }
+    reelsEl.appendChild(reelEl);
+  }
+}
+
+function renderSlot() {
+  if (slotCellEls.length !== 5) createSlotFrame();
+  slotState.reels.forEach((reel, reelIndex) => {
+    const reelEl = slotCellEls[reelIndex]?.[0]?.parentElement;
+    if (reelEl) reelEl.classList.toggle("spinning", slotState.spinning && !slotState.stopped[reelIndex]);
+    reel.forEach((symbol, rowIndex) => {
+      const cell = slotCellEls[reelIndex]?.[rowIndex];
+      if (!cell) return;
       cell.className = `slot-symbol symbol-${symbol.id}`;
       cell.textContent = symbol.icon;
       cell.title = symbol.label;
-      reelEl.appendChild(cell);
     });
-    reelsEl.appendChild(reelEl);
   });
   document.getElementById("slotLinesLabel").textContent = slotState.lines;
   document.getElementById("slotBetLabel").textContent = slotState.betPerLine;
@@ -159,6 +181,14 @@ function renderSlot() {
   });
   document.getElementById("slotSpinBtn").disabled = slotState.spinning || slotState.pendingWin > 0;
   updateBalanceLabels();
+}
+
+function clearSlotTimers() {
+  slotState.timers.forEach((timer) => {
+    clearInterval(timer);
+    clearTimeout(timer);
+  });
+  slotState.timers = [];
 }
 
 function renderPaytable() {
@@ -194,6 +224,7 @@ function spinSlot() {
   }
   if (freeSpin) slotState.freeSpins -= 1;
   else state.balance -= totalBet;
+  clearSlotTimers();
   slotState.spinning = true;
   slotState.stopped = [false, false, false, false, false];
   slotState.finalReels = buildSlotReels();
@@ -202,15 +233,15 @@ function spinSlot() {
   renderSlotLines();
   slotLog(`${freeSpin ? "免費局" : "下注"} ${totalBet}，轉輪開始。`);
 
-  slotState.timers = slotState.reels.map((_, index) =>
-    setInterval(() => {
+  slotState.reels.forEach((_, index) => {
+    const interval = setInterval(() => {
       slotState.reels[index] = Array.from({ length: 3 }, randomSlotSymbol);
       renderSlot();
-    }, 90),
-  );
-  slotState.reels.forEach((_, index) => {
-    setTimeout(() => stopSlotReel(index), 650 + index * 320);
+    }, 90);
+    const timeout = setTimeout(() => stopSlotReel(index), 650 + index * 320);
+    slotState.timers.push(interval, timeout);
   });
+  slotState.timers.push(setTimeout(forceFinishSlotSpin, 3200));
   renderSlot();
 }
 
@@ -224,6 +255,7 @@ function stopSlotReel(index) {
 }
 
 function finishSlotSpin() {
+  clearSlotTimers();
   slotState.spinning = false;
   const result = evaluateSlotWin();
   slotState.lastWin = result.totalWin;
@@ -235,6 +267,14 @@ function finishSlotSpin() {
   } else {
     slotLog("未中獎，請再試一把。");
   }
+}
+
+function forceFinishSlotSpin() {
+  if (!slotState.spinning) return;
+  slotState.reels = slotState.finalReels.map((reel) => [...reel]);
+  slotState.stopped = [true, true, true, true, true];
+  finishSlotSpin();
+  renderSlot();
 }
 
 function evaluateSlotWin() {
