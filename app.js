@@ -30,7 +30,7 @@ const state = {
   turn: "setup",
   currentPlayer: "你",
   lastDiscardFrom: null,
-  balance: 1750,
+  balance: 10000,
   aiDifficulty: "easy",
 };
 

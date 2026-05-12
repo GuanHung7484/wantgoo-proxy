@@ -470,8 +470,8 @@ main {
   right: 9px;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 250px;
+  width: 38px;
+  height: 150px;
   padding: 0;
   background: transparent;
   box-shadow: none;
@@ -484,9 +484,9 @@ main {
 
 .lever-bar {
   position: absolute;
-  top: 36px;
-  width: 9px;
-  height: 158px;
+  top: 31px;
+  width: 8px;
+  height: 84px;
   border-radius: 999px;
   background: linear-gradient(90deg, #ffe38c, #a95d12 48%, #5e2606);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 12px rgba(255, 210, 91, 0.35);
@@ -496,8 +496,8 @@ main {
 .lever-knob {
   position: absolute;
   top: 0;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: radial-gradient(circle at 32% 22%, #fff1b6, #ff335e 48%, #8d0522);
   box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.22), 0 0 18px rgba(255, 53, 207, 0.55);
@@ -506,20 +506,20 @@ main {
 
 .lever-base {
   position: absolute;
-  bottom: 20px;
-  width: 34px;
-  height: 34px;
+  bottom: 6px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 25%, #fff2ab, #cc781a 55%, #5b2508);
   box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.18);
 }
 
 .slot-lever.pulled .lever-knob {
-  transform: translateY(118px);
+  transform: translateY(68px);
 }
 
 .slot-lever.pulled .lever-bar {
-  transform: translateY(58px) scaleY(0.72);
+  transform: translateY(32px) scaleY(0.72);
 }
 
 .slot-reel {
@@ -1533,39 +1533,39 @@ main {
   }
 
   .slot-lever {
-    top: 106px;
+    top: 132px;
     right: 9px;
     bottom: auto;
-    width: 40px;
-    height: 250px;
+    width: 38px;
+    height: 150px;
   }
 
   .lever-bar {
-    top: 36px;
-    width: 9px;
-    height: 158px;
+    top: 31px;
+    width: 8px;
+    height: 84px;
   }
 
   .lever-knob {
     top: 0;
     left: auto;
-    width: 36px;
-    height: 36px;
-  }
-
-  .lever-base {
-    right: auto;
-    bottom: 20px;
     width: 34px;
     height: 34px;
   }
 
+  .lever-base {
+    right: auto;
+    bottom: 6px;
+    width: 32px;
+    height: 32px;
+  }
+
   .slot-lever.pulled .lever-knob {
-    transform: translateY(118px);
+    transform: translateY(68px);
   }
 
   .slot-lever.pulled .lever-bar {
-    transform: translateY(58px) scaleY(0.72);
+    transform: translateY(32px) scaleY(0.72);
   }
 
   .slot-reel {
