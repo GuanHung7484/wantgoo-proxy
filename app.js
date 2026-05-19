@@ -427,6 +427,18 @@ function currentAi() {
   return aiProfiles[state.aiDifficulty];
 }
 
+function handFor(player) {
+  return player === "你" ? state.hand : state.opponents[player];
+}
+
+function giveOpeningTile(player) {
+  if (!state.wall.length) return;
+  const hand = handFor(player);
+  hand.push(state.wall.shift());
+  hand.sort(sortTile);
+  if (player === "你") state.selectedIndex = hand.length - 1;
+}
+
 function setAiDifficulty(value) {
   state.aiDifficulty = value;
   const ai = currentAi();
@@ -452,6 +464,7 @@ function drawSeatAndDealer() {
   state.turn = state.currentPlayer === "你" ? "player" : "ai";
   state.lastDrawSelf = state.currentPlayer === "你";
   document.getElementById("diceBox").textContent = diceA + diceB;
+  giveOpeningTile(state.currentPlayer);
   log(`抽位完成：你坐東位，莊家為 ${dealerWind}，擲骰 ${diceA}+${diceB} 決定開門。`);
   log(dealerWind === "東" ? "你是莊家，先出一張牌。" : "由莊家先打，接著逆時針摸牌出牌。");
   if (state.currentPlayer !== "你") advanceAiTurns(false);
@@ -480,6 +493,10 @@ function drawTile() {
     return;
   }
   if (state.lastDiscard && state.lastDiscardFrom !== "你") {
+    if (nextPlayer(state.lastDiscardFrom) !== "你") {
+      log(`目前只能先回應 ${state.lastDiscard.label}，請按「過」放棄吃碰槓胡。`);
+      return;
+    }
     log(`你放棄 ${state.lastDiscard.label} 的吃碰槓胡，改為摸牌。`);
     state.lastDiscard = null;
     state.lastDiscardFrom = null;
@@ -534,6 +551,12 @@ function advanceAiTurns(shouldDraw) {
   let drawBeforeDiscard = shouldDraw;
   while (state.currentPlayer !== "你" && state.turn !== "finished") {
     if (!playAiTurn(state.currentPlayer, drawBeforeDiscard)) break;
+    if (hasPlayerResponseToDiscard()) {
+      state.currentPlayer = "你";
+      state.turn = "player";
+      log(`電腦打出 ${state.lastDiscard.label}，你可以吃、碰、槓、胡，或按「過」。`);
+      break;
+    }
     drawBeforeDiscard = true;
   }
   if (state.currentPlayer === "你" && state.turn !== "finished") {
@@ -544,6 +567,11 @@ function advanceAiTurns(shouldDraw) {
       log("輪到你摸牌。");
     }
   }
+}
+
+function hasPlayerResponseToDiscard() {
+  if (!state.lastDiscard || state.lastDiscardFrom === "你" || state.turn === "finished") return false;
+  return canHuDiscard() || canChi() || canPon() || canKan();
 }
 
 function playAiTurn(name, shouldDraw) {
@@ -565,6 +593,11 @@ function playAiTurn(name, shouldDraw) {
   state.river.push({ tile: discarded, from: name });
   const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
   log(`${name}（AI ${currentAi().label}）${shouldDraw ? "摸打一張" : "莊家先打"}，${thinking}：${discarded.label}。`);
+
+  if (hasPlayerResponseToDiscard()) {
+    state.currentPlayer = "你";
+    return true;
+  }
 
   const claimedBy = tryAiClaim(discarded, name);
   state.currentPlayer = claimedBy || nextPlayer(name);
@@ -707,10 +740,22 @@ function handlePromptAction(action) {
     render();
   }
   if (action === "pass") {
+    const from = state.lastDiscardFrom;
+    const next = from ? nextPlayer(from) : "你";
     log("你選擇過，不吃碰槓胡。");
     state.lastDiscard = null;
     state.lastDiscardFrom = null;
-    render();
+    state.lastDrawSelf = false;
+    state.currentPlayer = next;
+    if (next === "你") {
+      state.turn = "player";
+      log("輪到你摸牌。");
+      render();
+    } else {
+      state.turn = "ai";
+      advanceAiTurns(true);
+      render();
+    }
   }
 }
 
@@ -792,7 +837,7 @@ function getAvailablePrompts() {
     kan: canKan(),
     ting: canTing(),
     zimo: canSelfDraw(),
-    pass: Boolean(state.lastDiscard) && state.turn !== "finished",
+    pass: Boolean(state.lastDiscard) && state.lastDiscardFrom !== "你" && state.turn !== "finished",
   };
 }
 
@@ -804,17 +849,20 @@ function canChi() {
 
 function canPon() {
   if (state.turn === "finished") return false;
-  return Boolean(state.lastDiscard) && state.hand.filter((tile) => tile.label === state.lastDiscard.label).length >= 2;
+  return Boolean(state.lastDiscard) && state.lastDiscardFrom !== "你" && state.hand.filter((tile) => tile.label === state.lastDiscard.label).length >= 2;
 }
 
 function canKan() {
   if (state.turn === "finished") return false;
-  if (state.lastDiscard && state.hand.filter((tile) => tile.label === state.lastDiscard.label).length >= 3) return true;
+  if (state.lastDiscard) {
+    return state.lastDiscardFrom !== "你" && state.hand.filter((tile) => tile.label === state.lastDiscard.label).length >= 3;
+  }
   return Object.values(countTiles(state.hand)).some((count) => count >= 4);
 }
 
 function canHuDiscard() {
   if (!state.lastDiscard || state.turn === "finished") return false;
+  if (state.lastDiscardFrom === "你") return false;
   return isPotentialWinningHand([...state.hand, state.lastDiscard]);
 }
 
