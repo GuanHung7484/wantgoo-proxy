@@ -102,10 +102,12 @@ const moleState = {
   mode: "single",
   running: false,
   score: 0,
+  levelScore: 0,
+  level: 1,
   p1: 0,
   p2: 0,
   timeLeft: 30,
-  target: 18,
+  target: 50,
   active: new Map(),
   timer: null,
   spawnTimer: null,
@@ -426,7 +428,7 @@ function initMole() {
 function setMoleMode(mode) {
   if (moleState.running) return;
   moleState.mode = mode;
-  moleState.target = mode === "single" ? 18 : 16;
+  moleState.target = 50;
   document.getElementById("moleModeLabel").textContent = mode === "single" ? "單人模式" : "雙人對戰";
   document.getElementById("moleSingleBtn").classList.toggle("active", mode === "single");
   document.getElementById("moleDuelBtn").classList.toggle("active", mode === "duel");
@@ -439,19 +441,22 @@ function startMole() {
   clearMoleTimers();
   moleState.running = true;
   moleState.score = 0;
+  moleState.levelScore = 0;
+  moleState.level = 1;
   moleState.p1 = 0;
   moleState.p2 = 0;
-  moleState.timeLeft = 30;
+  moleState.timeLeft = 35;
   moleState.active.clear();
   clearMoleBoard();
   document.getElementById("moleLog").innerHTML = "";
-  moleLog(moleState.mode === "single" ? "單人挑戰開始。" : "雙人對戰開始，左半邊算左區，右半邊算右區。");
+  document.getElementById("moleResult").textContent = "第 1 關開始，達 50 分進入下一關。";
+  moleLog(moleState.mode === "single" ? "第 1 關開始。" : "雙人對戰開始，左半邊算左區，右半邊算右區。");
   moleState.timer = setInterval(() => {
     moleState.timeLeft -= 1;
     if (moleState.timeLeft <= 0) finishMole();
     renderMole();
   }, 1000);
-  moleState.spawnTimer = setInterval(spawnMole, 520);
+  startMoleSpawner();
   spawnMole();
   renderMole();
 }
@@ -460,9 +465,11 @@ function resetMole() {
   clearMoleTimers();
   moleState.running = false;
   moleState.score = 0;
+  moleState.levelScore = 0;
+  moleState.level = 1;
   moleState.p1 = 0;
   moleState.p2 = 0;
-  moleState.timeLeft = 30;
+  moleState.timeLeft = 35;
   moleState.active.clear();
   clearMoleBoard();
   document.getElementById("moleLog").innerHTML = "";
@@ -475,6 +482,17 @@ function clearMoleTimers() {
   clearInterval(moleState.spawnTimer);
   moleState.timer = null;
   moleState.spawnTimer = null;
+}
+
+function startMoleSpawner() {
+  clearInterval(moleState.spawnTimer);
+  moleState.spawnTimer = setInterval(spawnMole, moleSpeed().spawn);
+}
+
+function moleSpeed() {
+  if (moleState.level === 1) return { spawn: 620, stay: 980 };
+  if (moleState.level === 2) return { spawn: 460, stay: 760 };
+  return { spawn: 340, stay: 560 };
 }
 
 function clearMoleBoard() {
@@ -496,7 +514,8 @@ function spawnMole() {
   moleState.active.set(index, character);
   hole.className = `mole-hole up ${character.className}`;
   hole.innerHTML = `<span class="mole-rim"></span><span class="mole-character">${moleFace(character.type)}</span><span class="mole-points">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
-  setTimeout(() => missMole(index), character.type === "gold" ? 760 : 920);
+  const stay = character.type === "gold" ? Math.max(360, moleSpeed().stay - 160) : moleSpeed().stay;
+  setTimeout(() => missMole(index), stay);
 }
 
 function moleFace(type) {
@@ -557,38 +576,64 @@ function missMole(index) {
 }
 
 function addMoleScore(index, delta) {
+  const gain = Math.max(0, delta);
   if (moleState.mode === "duel") {
     if (index % 3 === 0) moleState.p1 = Math.max(0, moleState.p1 + delta);
     else if (index % 3 === 2) moleState.p2 = Math.max(0, moleState.p2 + delta);
     else if (index < 4) moleState.p1 = Math.max(0, moleState.p1 + delta);
     else moleState.p2 = Math.max(0, moleState.p2 + delta);
     moleState.score = moleState.p1 + moleState.p2;
+    moleState.levelScore += gain;
+    checkMoleLevelUp();
     return;
   }
   moleState.score = Math.max(0, moleState.score + delta);
+  moleState.levelScore += gain;
+  checkMoleLevelUp();
 }
 
-function finishMole() {
+function checkMoleLevelUp() {
+  if (!moleState.running || moleState.levelScore < moleState.target) return;
+  if (moleState.level >= 3) {
+    finishMole(true);
+    return;
+  }
+  moleState.level += 1;
+  moleState.levelScore = 0;
+  moleState.timeLeft = 35;
+  moleState.active.clear();
+  clearMoleBoard();
+  startMoleSpawner();
+  document.getElementById("moleResult").textContent = `進入第 ${moleState.level} 關，速度提升。`;
+  moleLog(`達到 50 分，進入第 ${moleState.level} 關。`);
+}
+
+function finishMole(cleared = false) {
   clearMoleTimers();
   moleState.running = false;
   moleState.active.clear();
   clearMoleBoard();
+  if (cleared) {
+    document.getElementById("moleResult").textContent = `全破，總分 ${moleState.score}`;
+    moleLog("完成第 3 關，全破。");
+    renderMole();
+    return;
+  }
   if (moleState.mode === "duel") {
     const result = moleState.p1 === moleState.p2 ? "平手" : moleState.p1 > moleState.p2 ? "左區勝利" : "右區勝利";
     document.getElementById("moleResult").textContent = `${result}，左區 ${moleState.p1}：右區 ${moleState.p2}`;
     moleLog(`時間到，${result}。`);
   } else {
-    const passed = moleState.score >= moleState.target;
-    document.getElementById("moleResult").textContent = passed ? `過關，分數 ${moleState.score}` : `失敗，分數 ${moleState.score}`;
-    moleLog(passed ? "達成過關門檻。" : "未達過關門檻。");
+    document.getElementById("moleResult").textContent = `失敗，第 ${moleState.level} 關分數 ${moleState.levelScore} / 50，總分 ${moleState.score}`;
+    moleLog("時間到，未達本關 50 分。");
   }
   renderMole();
 }
 
 function renderMole() {
-  document.getElementById("moleScoreLabel").textContent = `分數：${moleState.score}`;
+  document.getElementById("moleScoreLabel").textContent = `第 ${moleState.level} 關：${moleState.levelScore} / 50`;
   document.getElementById("moleTimeLabel").textContent = `時間：${moleState.timeLeft}`;
-  document.getElementById("moleTargetLabel").textContent = `過關：${moleState.target}`;
+  document.getElementById("moleTargetLabel").textContent = `總分：${moleState.score}`;
   document.getElementById("moleP1Label").textContent = moleState.p1;
   document.getElementById("moleP2Label").textContent = moleState.p2;
   document.getElementById("moleStartBtn").disabled = moleState.running;

@@ -444,15 +444,17 @@ main {
   bottom: 21px;
   display: grid;
   place-items: center;
-  width: min(78%, 74px);
-  aspect-ratio: 1;
-  border-radius: 50% 50% 46% 46%;
-  background: linear-gradient(180deg, #c98845, #784017);
+  width: auto;
+  min-width: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+  background: transparent;
   font-size: clamp(32px, 8vw, 52px);
   opacity: 0;
   transform: translate(-50%, 35px) scale(0.72);
   transition: transform 0.12s ease, opacity 0.12s ease;
-  box-shadow: inset 0 8px 0 rgba(255, 255, 255, 0.13), 0 7px 8px rgba(0, 0, 0, 0.22);
+  box-shadow: none;
+  filter: drop-shadow(0 7px 4px rgba(0, 0, 0, 0.34));
   z-index: 2;
 }
 
@@ -464,18 +466,6 @@ main {
 .mole-hole.up .mole-character {
   opacity: 1;
   transform: translate(-50%, 0) scale(1);
-}
-
-.mole-hole.mole-gold .mole-character {
-  background: linear-gradient(180deg, #ffe873, #c88714);
-}
-
-.mole-hole.mole-bad .mole-character {
-  background: linear-gradient(180deg, #f3f6ff, #7c8ca8);
-}
-
-.mole-hole.mole-bomb .mole-character {
-  background: linear-gradient(180deg, #4b5563, #070707);
 }
 
 .mole-hole.hit {
