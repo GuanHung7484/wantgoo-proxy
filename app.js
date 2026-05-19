@@ -416,11 +416,11 @@ function initMole() {
   }
   board.querySelectorAll(".mole-hole").forEach((hole, index) => {
     hole.dataset.index = index;
-    hole.replaceWith(hole.cloneNode(true));
   });
-  board.querySelectorAll(".mole-hole").forEach((hole) => {
-    hole.addEventListener("click", () => hitMole(Number(hole.dataset.index)));
-  });
+  if (!board.dataset.bound) {
+    board.addEventListener("click", handleMoleBoardClick);
+    board.dataset.bound = "true";
+  }
   setMoleMode("single");
   resetMole();
 }
@@ -499,6 +499,9 @@ function clearMoleBoard() {
   document.querySelectorAll(".mole-hole").forEach((hole) => {
     hole.className = "mole-hole";
     hole.innerHTML = '<span class="mole-rim"></span><span class="mole-character"></span>';
+    delete hole.dataset.character;
+    delete hole.dataset.score;
+    delete hole.dataset.miss;
     hole.disabled = false;
   });
 }
@@ -513,6 +516,9 @@ function spawnMole() {
   const character = pickMoleCharacter();
   moleState.active.set(index, character);
   hole.className = `mole-hole up ${character.className}`;
+  hole.dataset.character = character.type;
+  hole.dataset.score = String(character.score);
+  hole.dataset.miss = String(character.miss);
   hole.innerHTML = `<span class="mole-rim"></span><span class="mole-character">${moleFace(character.type)}</span><span class="mole-points">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
   const stay = character.type === "gold" ? Math.max(360, moleSpeed().stay - 160) : moleSpeed().stay;
   setTimeout(() => missMole(index), stay);
@@ -533,9 +539,16 @@ function pickMoleCharacter() {
   return moleCharacters[3];
 }
 
-function hitMole(index) {
+function handleMoleBoardClick(event) {
+  const hole = event.target.closest(".mole-hole");
+  if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
+  hitMole(hole);
+}
+
+function hitMole(hole) {
   if (!moleState.running) return;
-  const character = moleState.active.get(index);
+  const index = Number(hole.dataset.index);
+  const character = moleState.active.get(index) || characterFromHole(hole);
   if (!character) {
     addMoleScore(index, -1);
     moleLog("敲空洞，扣 1 分。");
@@ -543,9 +556,11 @@ function hitMole(index) {
     return;
   }
   moleState.active.delete(index);
-  const hole = document.querySelector(`.mole-hole[data-index="${index}"]`);
   if (hole) {
     hole.className = "mole-hole hit";
+    delete hole.dataset.character;
+    delete hole.dataset.score;
+    delete hole.dataset.miss;
     hole.innerHTML = `<span class="mole-rim"></span><span class="mole-hammer">🔨</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
     setTimeout(() => {
       if (!moleState.active.has(index)) {
@@ -559,6 +574,13 @@ function hitMole(index) {
   renderMole();
 }
 
+function characterFromHole(hole) {
+  if (!hole.dataset.character) return null;
+  const preset = moleCharacters.find((item) => item.type === hole.dataset.character);
+  if (!preset) return null;
+  return { ...preset, score: Number(hole.dataset.score), miss: Number(hole.dataset.miss) };
+}
+
 function missMole(index) {
   if (!moleState.running || !moleState.active.has(index)) return;
   const character = moleState.active.get(index);
@@ -566,6 +588,9 @@ function missMole(index) {
   const hole = document.querySelector(`.mole-hole[data-index="${index}"]`);
   if (hole) {
     hole.className = "mole-hole";
+    delete hole.dataset.character;
+    delete hole.dataset.score;
+    delete hole.dataset.miss;
     hole.innerHTML = '<span class="mole-rim"></span><span class="mole-character"></span>';
   }
   if (character.miss) {
