@@ -304,6 +304,7 @@ main {
 
 .table-head,
 .slot-head,
+.mole-head,
 .store-head {
   display: flex;
   justify-content: space-between;
@@ -315,6 +316,7 @@ main {
 
 .table-head h2,
 .slot-head h2,
+.mole-head h2,
 .store-head h2,
 .rules h2 {
   margin: 4px 0 0;
@@ -340,6 +342,163 @@ main {
 
 .slot-view {
   max-width: 1180px;
+}
+
+.mole-view {
+  max-width: 1180px;
+}
+
+.mole-layout {
+  display: grid;
+  grid-template-columns: minmax(560px, 1fr) minmax(260px, 330px);
+  gap: 14px;
+  align-items: start;
+}
+
+.mole-panel,
+.mole-side {
+  border: 1px solid rgba(255, 210, 91, 0.42);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(38, 221, 122, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(20, 89, 58, 0.94), rgba(16, 32, 48, 0.96));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08), 0 16px 32px rgba(0, 0, 0, 0.25);
+}
+
+.mole-panel {
+  padding: 14px;
+}
+
+.mole-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(88px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mole-controls button {
+  min-height: 46px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #26dd7a, #10814f);
+  color: #f7fff9;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.14);
+  font-weight: 900;
+}
+
+.mole-controls button.active,
+.mole-controls button:nth-child(3) {
+  background: linear-gradient(180deg, #ffd25b, #ca7515);
+  color: #321700;
+}
+
+.mole-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(86px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px) center / 25% 100%,
+    linear-gradient(180deg, #0f704e, #064532);
+}
+
+.mole-hole {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.25;
+  border-radius: 999px 999px 42% 42%;
+  background:
+    radial-gradient(ellipse at 50% 78%, #140b06 0 42%, transparent 43%),
+    linear-gradient(180deg, #7b4a24, #3c1f0d);
+  color: white;
+  font-size: clamp(22px, 4vw, 42px);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.mole-hole.up::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 28%;
+  width: 54%;
+  aspect-ratio: 1;
+  border-radius: 50% 50% 44% 44%;
+  background: linear-gradient(180deg, #c98845, #784017);
+  transform: translateX(-50%);
+  box-shadow: inset 0 8px 0 rgba(255, 255, 255, 0.13);
+}
+
+.mole-hole.up {
+  padding-bottom: 18px;
+  color: #fff8e5;
+  font-weight: 900;
+}
+
+.mole-hole.mole-gold::before {
+  background: linear-gradient(180deg, #ffe873, #c88714);
+}
+
+.mole-hole.mole-bad::before {
+  background: linear-gradient(180deg, #f3f6ff, #7c8ca8);
+}
+
+.mole-hole.mole-bomb::before {
+  background: linear-gradient(180deg, #4b5563, #070707);
+}
+
+.mole-hole.hit {
+  background:
+    radial-gradient(ellipse at 50% 78%, #140b06 0 42%, transparent 43%),
+    linear-gradient(180deg, #ffd25b, #bb5b18);
+  color: #351500;
+}
+
+.mole-side {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.mole-result,
+.mole-duel-score,
+.mole-log {
+  border: 1px solid rgba(136, 211, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(7, 13, 47, 0.72);
+}
+
+.mole-result {
+  padding: 14px;
+  color: var(--gold);
+  font-weight: 900;
+}
+
+.mole-duel-score {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.mole-duel-score.active {
+  display: grid;
+}
+
+.mole-duel-score strong {
+  color: var(--gold);
+}
+
+.mole-log {
+  display: grid;
+  gap: 5px;
+  max-height: 220px;
+  margin: 0;
+  padding: 10px 10px 10px 30px;
+  overflow: auto;
+  color: var(--muted);
 }
 
 .slot-layout {
@@ -1489,7 +1648,7 @@ main {
   .rail {
     inset: auto 0 0;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     width: auto;
     padding: 6px;
     border-top: 1px solid var(--line);
@@ -1516,6 +1675,7 @@ main {
   }
 
   .game-strip,
+  .mole-layout,
   .slot-layout,
   .payment-grid,
   .rule-grid {
@@ -1526,6 +1686,16 @@ main {
     grid-template-columns: repeat(5, minmax(54px, 1fr));
     gap: 5px;
     padding: 6px;
+  }
+
+  .mole-board {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .mole-controls {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .slot-machine {

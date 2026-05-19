@@ -1,6 +1,7 @@
 const views = {
   lobby: document.getElementById("lobbyView"),
   mahjong: document.getElementById("mahjongView"),
+  mole: document.getElementById("moleView"),
   slot: document.getElementById("slotView"),
   store: document.getElementById("storeView"),
   rules: document.getElementById("rulesView"),
@@ -96,6 +97,25 @@ const slotState = {
   leverPulled: false,
 };
 let slotCellEls = [];
+
+const moleState = {
+  mode: "single",
+  running: false,
+  score: 0,
+  p1: 0,
+  p2: 0,
+  timeLeft: 30,
+  target: 18,
+  active: new Map(),
+  timer: null,
+  spawnTimer: null,
+};
+const moleCharacters = [
+  { type: "mole", label: "地鼠", score: 1, miss: -1, className: "mole-good" },
+  { type: "gold", label: "金地鼠", score: 3, miss: 0, className: "mole-gold" },
+  { type: "cat", label: "貓咪", score: -2, miss: 0, className: "mole-bad" },
+  { type: "bomb", label: "炸彈", score: -3, miss: 0, className: "mole-bomb" },
+];
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => el.classList.toggle("active", key === name));
@@ -374,6 +394,193 @@ function gambleSlot(choice) {
 
 function slotLog(message) {
   const list = document.getElementById("slotLog");
+  const item = document.createElement("li");
+  item.textContent = message;
+  list.prepend(item);
+}
+
+function initMole() {
+  const board = document.getElementById("moleBoard");
+  board.innerHTML = "";
+  for (let index = 0; index < 12; index += 1) {
+    const hole = document.createElement("button");
+    hole.type = "button";
+    hole.className = "mole-hole";
+    hole.dataset.index = index;
+    hole.setAttribute("aria-label", `洞口 ${index + 1}`);
+    hole.addEventListener("click", () => hitMole(index));
+    board.appendChild(hole);
+  }
+  setMoleMode("single");
+  resetMole();
+}
+
+function setMoleMode(mode) {
+  if (moleState.running) return;
+  moleState.mode = mode;
+  moleState.target = mode === "single" ? 18 : 16;
+  document.getElementById("moleModeLabel").textContent = mode === "single" ? "單人模式" : "雙人對戰";
+  document.getElementById("moleSingleBtn").classList.toggle("active", mode === "single");
+  document.getElementById("moleDuelBtn").classList.toggle("active", mode === "duel");
+  document.getElementById("moleDuelScore").classList.toggle("active", mode === "duel");
+  renderMole();
+}
+
+function startMole() {
+  if (moleState.running) return;
+  clearMoleTimers();
+  moleState.running = true;
+  moleState.score = 0;
+  moleState.p1 = 0;
+  moleState.p2 = 0;
+  moleState.timeLeft = 30;
+  moleState.active.clear();
+  clearMoleBoard();
+  document.getElementById("moleLog").innerHTML = "";
+  moleLog(moleState.mode === "single" ? "單人挑戰開始。" : "雙人對戰開始，左半邊算左區，右半邊算右區。");
+  moleState.timer = setInterval(() => {
+    moleState.timeLeft -= 1;
+    if (moleState.timeLeft <= 0) finishMole();
+    renderMole();
+  }, 1000);
+  moleState.spawnTimer = setInterval(spawnMole, 520);
+  spawnMole();
+  renderMole();
+}
+
+function resetMole() {
+  clearMoleTimers();
+  moleState.running = false;
+  moleState.score = 0;
+  moleState.p1 = 0;
+  moleState.p2 = 0;
+  moleState.timeLeft = 30;
+  moleState.active.clear();
+  clearMoleBoard();
+  document.getElementById("moleLog").innerHTML = "";
+  document.getElementById("moleResult").textContent = "選擇模式後按開始。";
+  renderMole();
+}
+
+function clearMoleTimers() {
+  clearInterval(moleState.timer);
+  clearInterval(moleState.spawnTimer);
+  moleState.timer = null;
+  moleState.spawnTimer = null;
+}
+
+function clearMoleBoard() {
+  document.querySelectorAll(".mole-hole").forEach((hole) => {
+    hole.className = "mole-hole";
+    hole.textContent = "";
+    hole.disabled = false;
+  });
+}
+
+function spawnMole() {
+  if (!moleState.running) return;
+  const holes = [...document.querySelectorAll(".mole-hole")];
+  const empty = holes.filter((hole) => !moleState.active.has(Number(hole.dataset.index)));
+  if (!empty.length) return;
+  const hole = empty[Math.floor(Math.random() * empty.length)];
+  const index = Number(hole.dataset.index);
+  const character = pickMoleCharacter();
+  moleState.active.set(index, character);
+  hole.className = `mole-hole up ${character.className}`;
+  hole.textContent = character.type === "mole" ? "地" : character.type === "gold" ? "金" : character.type === "cat" ? "貓" : "!";
+  setTimeout(() => missMole(index), character.type === "gold" ? 760 : 920);
+}
+
+function pickMoleCharacter() {
+  const roll = Math.random();
+  if (roll < 0.68) return moleCharacters[0];
+  if (roll < 0.78) return moleCharacters[1];
+  if (roll < 0.91) return moleCharacters[2];
+  return moleCharacters[3];
+}
+
+function hitMole(index) {
+  if (!moleState.running) return;
+  const character = moleState.active.get(index);
+  if (!character) {
+    addMoleScore(index, -1);
+    moleLog("敲空洞，扣 1 分。");
+    renderMole();
+    return;
+  }
+  moleState.active.delete(index);
+  const hole = document.querySelector(`.mole-hole[data-index="${index}"]`);
+  if (hole) {
+    hole.className = "mole-hole hit";
+    hole.textContent = character.score > 0 ? "+": "-";
+    setTimeout(() => {
+      if (!moleState.active.has(index)) {
+        hole.className = "mole-hole";
+        hole.textContent = "";
+      }
+    }, 180);
+  }
+  addMoleScore(index, character.score);
+  moleLog(`${character.label}${character.score > 0 ? "命中" : "誤打"}，${character.score > 0 ? "+" : ""}${character.score} 分。`);
+  renderMole();
+}
+
+function missMole(index) {
+  if (!moleState.running || !moleState.active.has(index)) return;
+  const character = moleState.active.get(index);
+  moleState.active.delete(index);
+  const hole = document.querySelector(`.mole-hole[data-index="${index}"]`);
+  if (hole) {
+    hole.className = "mole-hole";
+    hole.textContent = "";
+  }
+  if (character.miss) {
+    addMoleScore(index, character.miss);
+    moleLog(`${character.label}跑掉，${character.miss} 分。`);
+    renderMole();
+  }
+}
+
+function addMoleScore(index, delta) {
+  if (moleState.mode === "duel") {
+    if (index % 4 < 2) moleState.p1 = Math.max(0, moleState.p1 + delta);
+    else moleState.p2 = Math.max(0, moleState.p2 + delta);
+    moleState.score = moleState.p1 + moleState.p2;
+    return;
+  }
+  moleState.score = Math.max(0, moleState.score + delta);
+}
+
+function finishMole() {
+  clearMoleTimers();
+  moleState.running = false;
+  moleState.active.clear();
+  clearMoleBoard();
+  if (moleState.mode === "duel") {
+    const result = moleState.p1 === moleState.p2 ? "平手" : moleState.p1 > moleState.p2 ? "左區勝利" : "右區勝利";
+    document.getElementById("moleResult").textContent = `${result}，左區 ${moleState.p1}：右區 ${moleState.p2}`;
+    moleLog(`時間到，${result}。`);
+  } else {
+    const passed = moleState.score >= moleState.target;
+    document.getElementById("moleResult").textContent = passed ? `過關，分數 ${moleState.score}` : `失敗，分數 ${moleState.score}`;
+    moleLog(passed ? "達成過關門檻。" : "未達過關門檻。");
+  }
+  renderMole();
+}
+
+function renderMole() {
+  document.getElementById("moleScoreLabel").textContent = `分數：${moleState.score}`;
+  document.getElementById("moleTimeLabel").textContent = `時間：${moleState.timeLeft}`;
+  document.getElementById("moleTargetLabel").textContent = `過關：${moleState.target}`;
+  document.getElementById("moleP1Label").textContent = moleState.p1;
+  document.getElementById("moleP2Label").textContent = moleState.p2;
+  document.getElementById("moleStartBtn").disabled = moleState.running;
+  document.getElementById("moleSingleBtn").disabled = moleState.running;
+  document.getElementById("moleDuelBtn").disabled = moleState.running;
+}
+
+function moleLog(message) {
+  const list = document.getElementById("moleLog");
   const item = document.createElement("li");
   item.textContent = message;
   list.prepend(item);
@@ -997,9 +1204,9 @@ function render() {
   document.getElementById("lastDiscard").textContent = `海底：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
   document.getElementById("turnLabel").textContent = getTurnText();
   document.getElementById("playerSeatStatus").textContent = state.isTing ? `聽牌 ${state.hand.length}` : `手牌 ${state.hand.length}`;
-  document.getElementById("seatDrawBtn").disabled = Boolean(state.dealer) || state.turn === "finished";
-  document.getElementById("drawBtn").disabled = !state.dealer || state.turn === "finished" || state.currentPlayer !== "你" || state.lastDrawSelf;
-  document.getElementById("discardBtn").disabled = !state.dealer || state.turn === "finished" || state.currentPlayer !== "你" || !state.lastDrawSelf;
+  document.getElementById("seatDrawBtn").disabled = false;
+  document.getElementById("drawBtn").disabled = false;
+  document.getElementById("discardBtn").disabled = false;
   document.querySelectorAll(".seat-marker").forEach((seat) => {
     seat.classList.toggle("dealer-seat", seat.dataset.wind === state.dealer);
     seat.classList.toggle("current", seat.dataset.wind === windByPlayer[state.currentPlayer]);
@@ -1149,6 +1356,10 @@ document.querySelectorAll("[data-stop-reel]").forEach((button) => {
 document.querySelectorAll("[data-gamble]").forEach((button) => {
   button.addEventListener("click", () => gambleSlot(button.dataset.gamble));
 });
+document.getElementById("moleSingleBtn").addEventListener("click", () => setMoleMode("single"));
+document.getElementById("moleDuelBtn").addEventListener("click", () => setMoleMode("duel"));
+document.getElementById("moleStartBtn").addEventListener("click", startMole);
+document.getElementById("moleResetBtn").addEventListener("click", resetMole);
 
 document.querySelectorAll(".payment-grid button").forEach((button, index) => {
   button.addEventListener("click", () => {
@@ -1161,4 +1372,5 @@ document.querySelectorAll(".payment-grid button").forEach((button, index) => {
 setAiDifficulty(state.aiDifficulty);
 startRound();
 initSlot();
+initMole();
 updateBalanceLabels();

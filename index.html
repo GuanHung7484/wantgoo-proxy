@@ -30,6 +30,7 @@
       <nav class="rail" aria-label="主要導覽">
         <button class="rail-btn active" data-view="lobby"><span>⌂</span>大廳</button>
         <button class="rail-btn" data-view="mahjong"><span>將</span>麻將</button>
+        <button class="rail-btn" data-view="mole"><span>槌</span>地鼠</button>
         <button class="rail-btn" data-view="slot"><span>777</span>拉霸</button>
         <button class="rail-btn" data-view="store"><span>◆</span>儲值</button>
         <button class="rail-btn" data-view="rules"><span>?</span>規則</button>
@@ -66,11 +67,11 @@
               <p>東南西北抽位，莊家先打，逆時針輪流摸打。</p>
               <button data-view="mahjong">進入遊戲</button>
             </article>
-            <article class="game-card locked">
-              <div class="card-badge">籌備中</div>
-              <h2>百家樂</h2>
-              <p>下一款牌桌遊戲預留欄位。</p>
-              <button disabled>尚未開放</button>
+            <article class="game-card mole-card">
+              <div class="card-badge">新遊戲</div>
+              <h2>打地鼠</h2>
+              <p>30 秒限時挑戰，打中地鼠得分，漏打與誤打會扣分。</p>
+              <button data-view="mole">開始敲擊</button>
             </article>
             <article class="game-card slot-card">
               <div class="card-badge">新開放</div>
@@ -78,6 +79,41 @@
               <p>5 軸 3 列、8 條線、Wild、Scatter、免費局與比倍遊戲。</p>
               <button data-view="slot">開始旋轉</button>
             </article>
+          </div>
+        </section>
+
+        <section class="view mole-view" id="moleView">
+          <div class="mole-head">
+            <div>
+              <span class="eyebrow">Whack-a-Mole</span>
+              <h2>打地鼠挑戰</h2>
+            </div>
+            <div class="round-status">
+              <span id="moleModeLabel">單人模式</span>
+              <span id="moleScoreLabel">分數：0</span>
+              <span id="moleTimeLabel">時間：30</span>
+              <span id="moleTargetLabel">過關：18</span>
+            </div>
+          </div>
+
+          <div class="mole-layout">
+            <section class="mole-panel">
+              <div class="mole-controls">
+                <button id="moleSingleBtn" type="button">單人</button>
+                <button id="moleDuelBtn" type="button">雙人</button>
+                <button id="moleStartBtn" type="button">開始</button>
+                <button id="moleResetBtn" type="button">重置</button>
+              </div>
+              <div class="mole-board" id="moleBoard" aria-label="打地鼠洞口"></div>
+            </section>
+            <aside class="mole-side">
+              <div class="mole-result" id="moleResult">選擇模式後按開始。</div>
+              <div class="mole-duel-score" id="moleDuelScore">
+                <span>左區：<strong id="moleP1Label">0</strong></span>
+                <span>右區：<strong id="moleP2Label">0</strong></span>
+              </div>
+              <ol class="mole-log" id="moleLog"></ol>
+            </aside>
           </div>
         </section>
 
@@ -297,6 +333,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=mahjong-rewrite-20260519"></script>
+    <script src="app.js?v=mahjong-mole-20260519"></script>
   </body>
 </html>
