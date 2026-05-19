@@ -33,6 +33,7 @@ button {
   color: inherit;
   font: inherit;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -394,7 +395,9 @@ main {
 .mole-board {
   display: grid;
   grid-template-columns: repeat(4, minmax(86px, 1fr));
+  grid-auto-rows: minmax(86px, auto);
   gap: 12px;
+  min-height: 330px;
   padding: 14px;
   border-radius: 8px;
   background:
@@ -403,18 +406,24 @@ main {
 }
 
 .mole-hole {
+  appearance: none;
+  -webkit-appearance: none;
   position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 1.25;
+  min-height: 86px;
+  border: 2px solid rgba(255, 210, 91, 0.25);
   border-radius: 999px 999px 42% 42%;
   background:
     radial-gradient(ellipse at 50% 78%, #140b06 0 42%, transparent 43%),
     linear-gradient(180deg, #7b4a24, #3c1f0d);
   color: white;
   font-size: clamp(22px, 4vw, 42px);
+  font-weight: 900;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
   overflow: hidden;
+  touch-action: manipulation;
 }
 
 .mole-hole.up::before {
@@ -434,6 +443,7 @@ main {
   padding-bottom: 18px;
   color: #fff8e5;
   font-weight: 900;
+  box-shadow: 0 0 18px rgba(255, 210, 91, 0.35);
 }
 
 .mole-hole.mole-gold::before {
@@ -1690,8 +1700,14 @@ main {
 
   .mole-board {
     grid-template-columns: repeat(3, minmax(72px, 1fr));
+    grid-auto-rows: minmax(78px, auto);
+    min-height: 330px;
     gap: 9px;
     padding: 10px;
+  }
+
+  .mole-hole {
+    min-height: 78px;
   }
 
   .mole-controls {

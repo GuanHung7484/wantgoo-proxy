@@ -701,6 +701,7 @@ function setAiDifficulty(value) {
 }
 
 function drawSeatAndDealer() {
+  log("已按下「骰子 / 起莊」。");
   if (state.dealer) {
     log(`本局已起莊，莊家為 ${state.dealer}。要重新抽位請按「重新開局」。`);
     return;
@@ -730,6 +731,7 @@ function drawSeatAndDealer() {
 }
 
 function drawTile() {
+  log("已按下「摸牌」。");
   if (!state.dealer) {
     log("尚未抽位起莊，請先按「抽位 / 起莊」。");
     return;
@@ -770,6 +772,7 @@ function drawTile() {
 }
 
 function discardTile() {
+  log("已按下「出牌」。");
   if (!state.dealer) {
     log("尚未抽位起莊，請先按「骰子 / 起莊」。");
     return;
