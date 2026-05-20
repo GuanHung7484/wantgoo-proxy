@@ -111,6 +111,7 @@ const moleState = {
   active: new Map(),
   timer: null,
   spawnTimer: null,
+  lastPointerHitAt: 0,
 };
 const moleCharacters = [
   { type: "mole", label: "地鼠", score: 1, miss: -1, className: "mole-good" },
@@ -418,6 +419,7 @@ function initMole() {
     hole.dataset.index = index;
   });
   if (!board.dataset.bound) {
+    board.addEventListener("pointerdown", handleMoleBoardPointerDown);
     board.addEventListener("click", handleMoleBoardClick);
     board.dataset.bound = "true";
   }
@@ -490,9 +492,9 @@ function startMoleSpawner() {
 }
 
 function moleSpeed() {
-  if (moleState.level === 1) return { spawn: 620, stay: 980 };
-  if (moleState.level === 2) return { spawn: 460, stay: 760 };
-  return { spawn: 340, stay: 560 };
+  if (moleState.level === 1) return { spawn: 800, stay: 1450 };
+  if (moleState.level === 2) return { spawn: 620, stay: 1100 };
+  return { spawn: 480, stay: 860 };
 }
 
 function clearMoleBoard() {
@@ -519,7 +521,7 @@ function spawnMole() {
   hole.dataset.character = character.type;
   hole.dataset.score = String(character.score);
   hole.dataset.miss = String(character.miss);
-  hole.innerHTML = `<span class="mole-rim"></span><span class="mole-character">${moleFace(character.type)}</span><span class="mole-points">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
+  hole.innerHTML = `<span class="mole-rim"></span><span class="mole-character">${moleFaceMarkup(character.type)}</span><span class="mole-points">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
   const stay = character.type === "gold" ? Math.max(360, moleSpeed().stay - 160) : moleSpeed().stay;
   setTimeout(() => missMole(index), stay);
 }
@@ -539,9 +541,24 @@ function pickMoleCharacter() {
   return moleCharacters[3];
 }
 
+function moleFaceMarkup(type) {
+  if (type === "cat") return "&#128049;";
+  if (type === "bomb") return "&#128163;";
+  return "&#128045;";
+}
+
 function handleMoleBoardClick(event) {
+  if (Date.now() - moleState.lastPointerHitAt < 450) return;
   const hole = event.target.closest(".mole-hole");
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
+  hitMole(hole);
+}
+
+function handleMoleBoardPointerDown(event) {
+  const hole = event.target.closest(".mole-hole");
+  if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
+  moleState.lastPointerHitAt = Date.now();
+  event.preventDefault();
   hitMole(hole);
 }
 
@@ -561,13 +578,13 @@ function hitMole(hole) {
     delete hole.dataset.character;
     delete hole.dataset.score;
     delete hole.dataset.miss;
-    hole.innerHTML = `<span class="mole-rim"></span><span class="mole-hammer">🔨</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
+    hole.innerHTML = `<span class="mole-rim"></span><span class="mole-hit-face">${moleFaceMarkup(character.type)}</span><span class="mole-stars" aria-hidden="true"><span>&#9733;</span><span>&#9733;</span><span>&#9733;</span></span><span class="mole-hammer">&#128296;</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
     setTimeout(() => {
       if (!moleState.active.has(index)) {
         hole.className = "mole-hole";
         hole.innerHTML = '<span class="mole-rim"></span><span class="mole-character"></span>';
       }
-    }, 180);
+    }, 360);
   }
   addMoleScore(index, character.score);
   moleLog(`${character.label}${character.score > 0 ? "命中" : "誤打"}，${character.score > 0 ? "+" : ""}${character.score} 分。`);
@@ -603,16 +620,16 @@ function missMole(index) {
 function addMoleScore(index, delta) {
   const gain = Math.max(0, delta);
   if (moleState.mode === "duel") {
-    if (index % 3 === 0) moleState.p1 = Math.max(0, moleState.p1 + delta);
-    else if (index % 3 === 2) moleState.p2 = Math.max(0, moleState.p2 + delta);
-    else if (index < 4) moleState.p1 = Math.max(0, moleState.p1 + delta);
-    else moleState.p2 = Math.max(0, moleState.p2 + delta);
+    if (index % 3 === 0) moleState.p1 += delta;
+    else if (index % 3 === 2) moleState.p2 += delta;
+    else if (index < 4) moleState.p1 += delta;
+    else moleState.p2 += delta;
     moleState.score = moleState.p1 + moleState.p2;
     moleState.levelScore += gain;
     checkMoleLevelUp();
     return;
   }
-  moleState.score = Math.max(0, moleState.score + delta);
+  moleState.score += delta;
   moleState.levelScore += gain;
   checkMoleLevelUp();
 }

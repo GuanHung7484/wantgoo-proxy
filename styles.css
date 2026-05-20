@@ -424,6 +424,10 @@ main {
   touch-action: manipulation;
 }
 
+.mole-hole span {
+  pointer-events: none;
+}
+
 .mole-rim {
   position: absolute;
   left: 50%;
@@ -472,6 +476,44 @@ main {
   color: #351500;
 }
 
+.mole-hit-face {
+  position: absolute;
+  left: 50%;
+  bottom: 21px;
+  z-index: 3;
+  font-size: clamp(32px, 8vw, 52px);
+  transform: translate(-50%, 0) scale(1);
+  filter: drop-shadow(0 7px 4px rgba(0, 0, 0, 0.34));
+  animation: mole-bonk 0.32s ease-out;
+}
+
+.mole-stars {
+  position: absolute;
+  left: 50%;
+  bottom: 72%;
+  z-index: 6;
+  display: flex;
+  gap: 4px;
+  color: #ffd25b;
+  font-size: clamp(15px, 3vw, 22px);
+  text-shadow: 0 2px 0 rgba(53, 21, 0, 0.55), 0 0 10px rgba(255, 210, 91, 0.85);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.mole-stars span {
+  display: inline-block;
+  animation: mole-star-pop 0.34s ease-out both;
+}
+
+.mole-stars span:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.mole-stars span:nth-child(3) {
+  animation-delay: 0.08s;
+}
+
 .mole-points {
   position: absolute;
   right: 12%;
@@ -511,6 +553,33 @@ main {
   }
   to {
     transform: translateX(-50%) rotate(-24deg);
+  }
+}
+
+@keyframes mole-bonk {
+  0% {
+    transform: translate(-50%, -2px) scale(1.08);
+  }
+  45% {
+    transform: translate(-50%, 7px) scale(0.94);
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes mole-star-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.45) rotate(-18deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.12) rotate(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
   }
 }
 
