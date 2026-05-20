@@ -112,6 +112,7 @@ const moleState = {
   timer: null,
   spawnTimer: null,
   lastPointerHitAt: 0,
+  nextSpawnId: 1,
 };
 const moleCharacters = [
   { type: "mole", label: "地鼠", score: 1, miss: -1, className: "mole-good" },
@@ -417,6 +418,12 @@ function initMole() {
   }
   board.querySelectorAll(".mole-hole").forEach((hole, index) => {
     hole.dataset.index = index;
+    if (!hole.dataset.hitBound) {
+      hole.addEventListener("pointerdown", handleMoleHolePointerDown);
+      hole.addEventListener("touchstart", handleMoleHoleTouchStart, { passive: false });
+      hole.addEventListener("click", handleMoleHoleClick);
+      hole.dataset.hitBound = "true";
+    }
   });
   if (!board.dataset.bound) {
     board.addEventListener("pointerdown", handleMoleBoardPointerDown);
@@ -449,6 +456,7 @@ function startMole() {
   moleState.p2 = 0;
   moleState.timeLeft = 35;
   moleState.active.clear();
+  moleState.nextSpawnId = 1;
   clearMoleBoard();
   document.getElementById("moleLog").innerHTML = "";
   document.getElementById("moleResult").textContent = "第 1 關開始，達 50 分進入下一關。";
@@ -504,6 +512,7 @@ function clearMoleBoard() {
     delete hole.dataset.character;
     delete hole.dataset.score;
     delete hole.dataset.miss;
+    delete hole.dataset.spawnId;
     hole.disabled = false;
   });
 }
@@ -516,14 +525,17 @@ function spawnMole() {
   const hole = empty[Math.floor(Math.random() * empty.length)];
   const index = Number(hole.dataset.index);
   const character = pickMoleCharacter();
-  moleState.active.set(index, character);
+  const spawnId = moleState.nextSpawnId;
+  moleState.nextSpawnId += 1;
+  moleState.active.set(index, { ...character, spawnId });
   hole.className = `mole-hole up ${character.className}`;
   hole.dataset.character = character.type;
   hole.dataset.score = String(character.score);
   hole.dataset.miss = String(character.miss);
+  hole.dataset.spawnId = String(spawnId);
   hole.innerHTML = `<span class="mole-rim"></span><span class="mole-character">${moleFaceMarkup(character.type)}</span><span class="mole-points">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
   const stay = character.type === "gold" ? Math.max(360, moleSpeed().stay - 160) : moleSpeed().stay;
-  setTimeout(() => missMole(index), stay);
+  setTimeout(() => missMole(index, spawnId), stay);
 }
 
 function moleFace(type) {
@@ -549,17 +561,59 @@ function moleFaceMarkup(type) {
 
 function handleMoleBoardClick(event) {
   if (Date.now() - moleState.lastPointerHitAt < 450) return;
-  const hole = event.target.closest(".mole-hole");
+  const hole = getMoleHitTarget(event);
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
   hitMole(hole);
 }
 
 function handleMoleBoardPointerDown(event) {
-  const hole = event.target.closest(".mole-hole");
+  const hole = getMoleHitTarget(event);
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
   moleState.lastPointerHitAt = Date.now();
   event.preventDefault();
   hitMole(hole);
+}
+
+function handleMoleHolePointerDown(event) {
+  moleState.lastPointerHitAt = Date.now();
+  event.stopPropagation();
+  event.preventDefault();
+  hitMole(event.currentTarget);
+}
+
+function handleMoleHoleTouchStart(event) {
+  if (Date.now() - moleState.lastPointerHitAt < 120) return;
+  moleState.lastPointerHitAt = Date.now();
+  event.stopPropagation();
+  event.preventDefault();
+  hitMole(event.currentTarget);
+}
+
+function handleMoleHoleClick(event) {
+  event.stopPropagation();
+  if (Date.now() - moleState.lastPointerHitAt < 450) return;
+  hitMole(event.currentTarget);
+}
+
+function getMoleHitTarget(event) {
+  const directHole = event.target.closest(".mole-hole");
+  if (directHole) return directHole;
+  if (typeof event.clientX !== "number" || typeof event.clientY !== "number") return null;
+  let nearestHole = null;
+  let nearestDistance = Infinity;
+  moleState.active.forEach((_, index) => {
+    const hole = document.querySelector(`.mole-hole[data-index="${index}"]`);
+    if (!hole) return;
+    const rect = hole.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const distance = Math.hypot(event.clientX - centerX, event.clientY - centerY);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestHole = hole;
+    }
+  });
+  return nearestDistance <= 76 ? nearestHole : null;
 }
 
 function hitMole(hole) {
@@ -567,9 +621,7 @@ function hitMole(hole) {
   const index = Number(hole.dataset.index);
   const character = moleState.active.get(index) || characterFromHole(hole);
   if (!character) {
-    addMoleScore(index, -1);
-    moleLog("敲空洞，扣 1 分。");
-    renderMole();
+    moleLog("敲空洞。");
     return;
   }
   moleState.active.delete(index);
@@ -578,6 +630,7 @@ function hitMole(hole) {
     delete hole.dataset.character;
     delete hole.dataset.score;
     delete hole.dataset.miss;
+    delete hole.dataset.spawnId;
     hole.innerHTML = `<span class="mole-rim"></span><span class="mole-hit-face">${moleFaceMarkup(character.type)}</span><span class="mole-stars" aria-hidden="true"><span>&#9733;</span><span>&#9733;</span><span>&#9733;</span></span><span class="mole-hammer">&#128296;</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
     setTimeout(() => {
       if (!moleState.active.has(index)) {
@@ -598,9 +651,10 @@ function characterFromHole(hole) {
   return { ...preset, score: Number(hole.dataset.score), miss: Number(hole.dataset.miss) };
 }
 
-function missMole(index) {
+function missMole(index, spawnId) {
   if (!moleState.running || !moleState.active.has(index)) return;
   const character = moleState.active.get(index);
+  if (character.spawnId !== spawnId) return;
   moleState.active.delete(index);
   const hole = document.querySelector(`.mole-hole[data-index="${index}"]`);
   if (hole) {
@@ -608,28 +662,24 @@ function missMole(index) {
     delete hole.dataset.character;
     delete hole.dataset.score;
     delete hole.dataset.miss;
+    delete hole.dataset.spawnId;
     hole.innerHTML = '<span class="mole-rim"></span><span class="mole-character"></span>';
-  }
-  if (character.miss) {
-    addMoleScore(index, character.miss);
-    moleLog(`${character.label}跑掉，${character.miss} 分。`);
-    renderMole();
   }
 }
 
 function addMoleScore(index, delta) {
   const gain = Math.max(0, delta);
   if (moleState.mode === "duel") {
-    if (index % 3 === 0) moleState.p1 += delta;
-    else if (index % 3 === 2) moleState.p2 += delta;
-    else if (index < 4) moleState.p1 += delta;
-    else moleState.p2 += delta;
+    if (index % 3 === 0) moleState.p1 = Math.max(0, moleState.p1 + delta);
+    else if (index % 3 === 2) moleState.p2 = Math.max(0, moleState.p2 + delta);
+    else if (index < 4) moleState.p1 = Math.max(0, moleState.p1 + delta);
+    else moleState.p2 = Math.max(0, moleState.p2 + delta);
     moleState.score = moleState.p1 + moleState.p2;
     moleState.levelScore += gain;
     checkMoleLevelUp();
     return;
   }
-  moleState.score += delta;
+  moleState.score = Math.max(0, moleState.score + delta);
   moleState.levelScore += gain;
   checkMoleLevelUp();
 }
