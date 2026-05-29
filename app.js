@@ -419,14 +419,15 @@ function initMole() {
   board.querySelectorAll(".mole-hole").forEach((hole, index) => {
     hole.dataset.index = index;
     if (!hole.dataset.hitBound) {
-      hole.addEventListener("pointerdown", handleMoleHolePointerDown);
-      hole.addEventListener("touchstart", handleMoleHoleTouchStart, { passive: false });
-      hole.addEventListener("click", handleMoleHoleClick);
       hole.dataset.hitBound = "true";
     }
   });
   if (!board.dataset.bound) {
-    board.addEventListener("pointerdown", handleMoleBoardPointerDown);
+    if (window.PointerEvent) {
+      board.addEventListener("pointerdown", handleMoleBoardPointerDown);
+    } else {
+      board.addEventListener("touchstart", handleMoleBoardTouchStart, { passive: false });
+    }
     board.addEventListener("click", handleMoleBoardClick);
     board.dataset.bound = "true";
   }
@@ -560,13 +561,14 @@ function moleFaceMarkup(type) {
 }
 
 function handleMoleBoardClick(event) {
-  if (Date.now() - moleState.lastPointerHitAt < 450) return;
+  if (Date.now() - moleState.lastPointerHitAt < 220) return;
   const hole = getMoleHitTarget(event);
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
   hitMole(hole);
 }
 
 function handleMoleBoardPointerDown(event) {
+  if (event.pointerType === "mouse" && event.button !== 0) return;
   const hole = getMoleHitTarget(event);
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
   moleState.lastPointerHitAt = Date.now();
@@ -574,7 +576,18 @@ function handleMoleBoardPointerDown(event) {
   hitMole(hole);
 }
 
+function handleMoleBoardTouchStart(event) {
+  const touch = event.changedTouches[0];
+  if (!touch) return;
+  const hole = getMoleHitTarget(touch);
+  if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
+  moleState.lastPointerHitAt = Date.now();
+  event.preventDefault();
+  hitMole(hole);
+}
+
 function handleMoleHolePointerDown(event) {
+  if (event.pointerType === "mouse" && event.button !== 0) return;
   moleState.lastPointerHitAt = Date.now();
   event.stopPropagation();
   event.preventDefault();
