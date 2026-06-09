@@ -8,6 +8,8 @@ const ALLOWED_HOSTS = new Set([
   'www.wantgoo.com',
   'www.tpex.org.tw',     // 櫃買中心（OTC 上櫃資料來源）
   'tw.stock.yahoo.com',  // 奇摩股市
+  'www.twse.com.tw',     // 證交所（MI_INDEX / T86 被 CF IP 擋 → 走代理）
+  'histock.tw',          // HiStock（主力券商分點）
 ]);
 
 const WG_HEADERS = {
