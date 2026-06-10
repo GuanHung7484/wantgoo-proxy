@@ -115,11 +115,12 @@ const moleState = {
   nextSpawnId: 1,
 };
 const moleCharacters = [
-  { type: "mole", label: "地鼠", score: 1, miss: -1, className: "mole-good" },
-  { type: "gold", label: "金地鼠", score: 3, miss: 0, className: "mole-gold" },
-  { type: "cat", label: "貓咪", score: -2, miss: 0, className: "mole-bad" },
-  { type: "bomb", label: "炸彈", score: -3, miss: 0, className: "mole-bomb" },
+  { type: "mole", label: "地鼠", score: 5, miss: -1, className: "mole-good" },
+  { type: "gold", label: "金地鼠", score: 10, miss: 0, className: "mole-gold" },
+  { type: "rat", label: "老鼠", score: -3, miss: 0, className: "mole-bad" },
+  { type: "mine", label: "地雷", score: -5, miss: 0, className: "mole-bomb" },
 ];
+const moleHammerMarkup = '<span class="mole-hammer-head"></span><span class="mole-hammer-handle"></span>';
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => el.classList.toggle("active", key === name));
@@ -418,19 +419,21 @@ function initMole() {
   }
   board.querySelectorAll(".mole-hole").forEach((hole, index) => {
     hole.dataset.index = index;
-    if (!hole.dataset.hitBound) {
-      hole.dataset.hitBound = "true";
-    }
+    hole.onclick = null;
+    hole.onpointerdown = null;
+    hole.ontouchstart = null;
   });
   if (!board.dataset.bound) {
-    if (window.PointerEvent) {
-      board.addEventListener("pointerdown", handleMoleBoardPointerDown);
-    } else {
-      board.addEventListener("touchstart", handleMoleBoardTouchStart, { passive: false });
-    }
-    board.addEventListener("click", handleMoleBoardClick);
+    board.addEventListener("mousedown", handleMoleSimpleClick);
+    board.addEventListener("touchstart", handleMoleSimpleClick, { passive: false });
+    board.addEventListener("click", handleMoleSimpleClick);
+    board.addEventListener("mousemove", moveMoleHammer);
+    board.addEventListener("mouseenter", showMoleHammer);
+    board.addEventListener("mouseleave", hideMoleHammer);
+    document.addEventListener("mousemove", moveMoleHammer);
     board.dataset.bound = "true";
   }
+  setupMoleHammerCursor();
   setMoleMode("single");
   resetMole();
 }
@@ -518,6 +521,15 @@ function clearMoleBoard() {
   });
 }
 
+function setupMoleHammerCursor() {
+  if (document.querySelector(".mole-cursor-hammer")) return;
+  const hammer = document.createElement("div");
+  hammer.className = "mole-cursor-hammer";
+  hammer.setAttribute("aria-hidden", "true");
+  hammer.innerHTML = moleHammerMarkup;
+  document.body.appendChild(hammer);
+}
+
 function spawnMole() {
   if (!moleState.running) return;
   const holes = [...document.querySelectorAll(".mole-hole")];
@@ -534,6 +546,16 @@ function spawnMole() {
   hole.dataset.score = String(character.score);
   hole.dataset.miss = String(character.miss);
   hole.dataset.spawnId = String(spawnId);
+  hole.onclick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (Date.now() - moleState.lastPointerHitAt < 80) return;
+    moleState.lastPointerHitAt = Date.now();
+    bonkMoleHammer(event);
+    hitMole(hole);
+  };
+  hole.onmousedown = hole.onclick;
+  hole.ontouchstart = hole.onclick;
   hole.innerHTML = `<span class="mole-rim"></span><span class="mole-character">${moleFaceMarkup(character.type)}</span><span class="mole-points">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
   const stay = character.type === "gold" ? Math.max(360, moleSpeed().stay - 160) : moleSpeed().stay;
   setTimeout(() => missMole(index, spawnId), stay);
@@ -548,31 +570,50 @@ function moleFace(type) {
 
 function pickMoleCharacter() {
   const roll = Math.random();
-  if (roll < 0.68) return moleCharacters[0];
-  if (roll < 0.78) return moleCharacters[1];
-  if (roll < 0.91) return moleCharacters[2];
+  if (roll < 0.64) return moleCharacters[0];
+  if (roll < 0.76) return moleCharacters[1];
+  if (roll < 0.9) return moleCharacters[2];
   return moleCharacters[3];
 }
 
 function moleFaceMarkup(type) {
-  if (type === "cat") return "&#128049;";
-  if (type === "bomb") return "&#128163;";
-  return "&#128045;";
+  if (type === "mine") return '<span class="mole-face mole-face-mine"><span></span></span>';
+  if (type === "rat") return '<span class="mole-face mole-face-rat"><span></span></span>';
+  return '<span class="mole-face mole-face-mole"><span></span></span>';
 }
 
+function whackMoleHole(index, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.moleHandled = true;
+    bonkMoleHammer(event);
+  }
+  const hole = (event && getMoleHitTarget(event)) || document.querySelector(`.mole-hole[data-index="${index}"]`);
+  if (hole) hitMole(hole);
+}
+
+window.whackMoleHole = whackMoleHole;
+
 function handleMoleBoardClick(event) {
+  if (event.moleHandled) return;
   if (Date.now() - moleState.lastPointerHitAt < 220) return;
   const hole = getMoleHitTarget(event);
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
+  event.moleHandled = true;
+  bonkMoleHammer(event);
   hitMole(hole);
 }
 
 function handleMoleBoardPointerDown(event) {
+  if (event.moleHandled) return;
   if (event.pointerType === "mouse" && event.button !== 0) return;
   const hole = getMoleHitTarget(event);
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
   moleState.lastPointerHitAt = Date.now();
+  event.moleHandled = true;
   event.preventDefault();
+  bonkMoleHammer(event);
   hitMole(hole);
 }
 
@@ -582,36 +623,108 @@ function handleMoleBoardTouchStart(event) {
   const hole = getMoleHitTarget(touch);
   if (!hole || !document.getElementById("moleBoard").contains(hole)) return;
   moleState.lastPointerHitAt = Date.now();
+  event.moleHandled = true;
   event.preventDefault();
   hitMole(hole);
 }
 
 function handleMoleHolePointerDown(event) {
+  if (event.moleHandled) return;
   if (event.pointerType === "mouse" && event.button !== 0) return;
   moleState.lastPointerHitAt = Date.now();
+  event.moleHandled = true;
   event.stopPropagation();
   event.preventDefault();
+  bonkMoleHammer(event);
   hitMole(event.currentTarget);
 }
 
 function handleMoleHoleTouchStart(event) {
+  if (event.moleHandled) return;
   if (Date.now() - moleState.lastPointerHitAt < 120) return;
   moleState.lastPointerHitAt = Date.now();
+  event.moleHandled = true;
   event.stopPropagation();
   event.preventDefault();
   hitMole(event.currentTarget);
 }
 
 function handleMoleHoleClick(event) {
+  if (event.moleHandled) return;
   event.stopPropagation();
   if (Date.now() - moleState.lastPointerHitAt < 450) return;
+  event.moleHandled = true;
+  bonkMoleHammer(event);
   hitMole(event.currentTarget);
 }
 
+function handleMoleDocumentPointerDown(event) {
+  const board = document.getElementById("moleBoard");
+  if (!board || !board.contains(event.target)) return;
+  handleMoleAttempt(event);
+}
+
+function handleMoleSimpleClick(event) {
+  if (!moleState.running || (typeof event.button === "number" && event.button !== 0)) return;
+  if (Date.now() - moleState.lastPointerHitAt < 120) return;
+  const hole = getMoleHitTarget(event);
+  if (!hole) return;
+  moleState.lastPointerHitAt = Date.now();
+  event.preventDefault();
+  event.stopPropagation();
+  bonkMoleHammer(event);
+  hitMole(hole);
+}
+
+function showMoleHammer(event) {
+  moveMoleHammer(event);
+  document.querySelector(".mole-cursor-hammer")?.classList.add("active");
+  document.getElementById("moleBoard")?.classList.add("hammer-ready");
+}
+
+function hideMoleHammer() {
+  document.querySelector(".mole-cursor-hammer")?.classList.remove("active", "bonk");
+  document.getElementById("moleBoard")?.classList.remove("hammer-ready", "hammer-bonk");
+}
+
+function moveMoleHammer(event) {
+  if (typeof event.clientX !== "number" || typeof event.clientY !== "number") return;
+  const board = document.getElementById("moleBoard");
+  const hammer = document.querySelector(".mole-cursor-hammer");
+  if (!board || !hammer) return;
+  hammer.style.left = `${event.clientX}px`;
+  hammer.style.top = `${event.clientY}px`;
+  hammer.classList.toggle("active", board.contains(event.target));
+}
+
+function bonkMoleHammer(event) {
+  moveMoleHammer(event);
+  const hammer = document.querySelector(".mole-cursor-hammer");
+  if (!hammer) return;
+  hammer.classList.add("active", "bonk");
+  window.setTimeout(() => hammer.classList.remove("bonk"), 160);
+}
+
+function handleMoleAttempt(event) {
+  if (event.moleHandled || !moleState.running || (typeof event.button === "number" && event.button !== 0)) return;
+  if (Date.now() - moleState.lastPointerHitAt < 140) return;
+  const board = document.getElementById("moleBoard");
+  if (!board || !board.contains(event.target)) return;
+  const hole = getMoleHitTarget(event);
+  if (!hole) return;
+  event.moleHandled = true;
+  moleState.lastPointerHitAt = Date.now();
+  event.preventDefault();
+  event.stopPropagation();
+  bonkMoleHammer(event);
+  hitMole(hole);
+}
+
 function getMoleHitTarget(event) {
+  const point = event.changedTouches?.[0] || event.touches?.[0] || event;
+  if (typeof point.clientX !== "number" || typeof point.clientY !== "number") return null;
   const directHole = event.target.closest(".mole-hole");
-  if (directHole) return directHole;
-  if (typeof event.clientX !== "number" || typeof event.clientY !== "number") return null;
+  if (directHole && moleState.active.has(Number(directHole.dataset.index))) return directHole;
   let nearestHole = null;
   let nearestDistance = Infinity;
   moleState.active.forEach((_, index) => {
@@ -620,13 +733,15 @@ function getMoleHitTarget(event) {
     const rect = hole.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    const distance = Math.hypot(event.clientX - centerX, event.clientY - centerY);
+    const distance = Math.hypot(point.clientX - centerX, point.clientY - centerY);
     if (distance < nearestDistance) {
       nearestDistance = distance;
       nearestHole = hole;
     }
   });
-  return nearestDistance <= 76 ? nearestHole : null;
+  if (nearestDistance <= 170) return nearestHole;
+  if (directHole) return directHole;
+  return null;
 }
 
 function hitMole(hole) {
@@ -644,13 +759,20 @@ function hitMole(hole) {
     delete hole.dataset.score;
     delete hole.dataset.miss;
     delete hole.dataset.spawnId;
-    hole.innerHTML = `<span class="mole-rim"></span><span class="mole-hit-face">${moleFaceMarkup(character.type)}</span><span class="mole-stars" aria-hidden="true"><span>&#9733;</span><span>&#9733;</span><span>&#9733;</span></span><span class="mole-hammer">&#128296;</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
+    hole.onclick = null;
+    hole.onmousedown = null;
+    hole.ontouchstart = null;
+    const effectMarkup =
+      character.score > 0
+        ? '<span class="mole-stars" aria-hidden="true"><span>&#9733;</span><span>&#9733;</span><span>&#9733;</span></span>'
+        : '<span class="mole-smoke" aria-hidden="true"><span></span><span></span><span></span></span>';
+    hole.innerHTML = `<span class="mole-rim"></span><span class="mole-hit-face">${moleFaceMarkup(character.type)}</span>${effectMarkup}<span class="mole-hammer" aria-hidden="true">${moleHammerMarkup}</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
     setTimeout(() => {
       if (!moleState.active.has(index)) {
         hole.className = "mole-hole";
         hole.innerHTML = '<span class="mole-rim"></span><span class="mole-character"></span>';
       }
-    }, 360);
+    }, 900);
   }
   addMoleScore(index, character.score);
   moleLog(`${character.label}${character.score > 0 ? "命中" : "誤打"}，${character.score > 0 ? "+" : ""}${character.score} 分。`);
@@ -676,24 +798,26 @@ function missMole(index, spawnId) {
     delete hole.dataset.score;
     delete hole.dataset.miss;
     delete hole.dataset.spawnId;
+    hole.onclick = null;
+    hole.onmousedown = null;
+    hole.ontouchstart = null;
     hole.innerHTML = '<span class="mole-rim"></span><span class="mole-character"></span>';
   }
 }
 
 function addMoleScore(index, delta) {
-  const gain = Math.max(0, delta);
   if (moleState.mode === "duel") {
-    if (index % 3 === 0) moleState.p1 = Math.max(0, moleState.p1 + delta);
-    else if (index % 3 === 2) moleState.p2 = Math.max(0, moleState.p2 + delta);
-    else if (index < 4) moleState.p1 = Math.max(0, moleState.p1 + delta);
-    else moleState.p2 = Math.max(0, moleState.p2 + delta);
+    if (index % 3 === 0) moleState.p1 += delta;
+    else if (index % 3 === 2) moleState.p2 += delta;
+    else if (index < 4) moleState.p1 += delta;
+    else moleState.p2 += delta;
     moleState.score = moleState.p1 + moleState.p2;
-    moleState.levelScore += gain;
+    moleState.levelScore += delta;
     checkMoleLevelUp();
     return;
   }
-  moleState.score = Math.max(0, moleState.score + delta);
-  moleState.levelScore += gain;
+  moleState.score += delta;
+  moleState.levelScore += delta;
   checkMoleLevelUp();
 }
 
