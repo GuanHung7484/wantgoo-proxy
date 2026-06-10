@@ -34,6 +34,20 @@ const state = {
   aiTimer: null,
   balance: 10000,
   aiDifficulty: "easy",
+  dealerStreak: 0,
+  roundWind: "東",
+  playerMoney: {
+    你: 10000,
+    "玩家 A": 10000,
+    "玩家 B": 10000,
+    "玩家 C": 10000,
+  },
+  melds: {
+    你: [],
+    "玩家 A": [],
+    "玩家 B": [],
+    "玩家 C": [],
+  },
 };
 
 const suits = [
@@ -910,6 +924,9 @@ function startRound() {
   Object.keys(state.opponents).forEach((name) => {
     state.opponents[name] = state.wall.splice(0, 16).sort(sortTile);
   });
+  Object.keys(state.melds).forEach((name) => {
+    state.melds[name] = [];
+  });
   replaceFlowers("你", state.hand, true);
   Object.entries(state.opponents).forEach(([name, hand]) => replaceFlowers(name, hand, true));
   state.selectedIndex = 0;
@@ -1005,7 +1022,7 @@ function drawSeatAndDealer() {
   state.dealer = dealerWind;
   state.currentPlayer = playerByWind[dealerWind];
   state.turn = state.currentPlayer === "你" ? "player" : "ai";
-  state.lastDrawSelf = state.currentPlayer === "你";
+  state.lastDrawSelf = true;
   state.lastDiscard = null;
   state.lastDiscardFrom = null;
   document.getElementById("diceBox").textContent = total;
@@ -1032,7 +1049,7 @@ function drawTile() {
     return;
   }
   if (!state.wall.length) {
-    log("牌牆已摸完，本局流局。");
+    endDrawnGame();
     return;
   }
   if (state.lastDrawSelf) {
@@ -1077,8 +1094,10 @@ function discardTile() {
     return;
   }
   if (!state.lastDrawSelf) {
-    log("請先摸牌，或先回應吃碰槓胡。");
-    return;
+    if (state.hand.length !== 17) {
+      log("請先摸牌，或先回應吃碰槓胡。");
+      return;
+    }
   }
   if (!state.hand.length) return;
   const [tile] = state.hand.splice(state.selectedIndex, 1);
@@ -1138,15 +1157,22 @@ function playAiTurn(name, shouldDraw) {
   if (!hand) return false;
   if (shouldDraw) {
     if (!state.wall.length) {
-      log("牌牆已摸完，本局流局。");
-      state.turn = "finished";
+      endDrawnGame();
       return false;
     }
     hand.push(state.wall.shift());
     replaceFlowers(name, hand, true);
+    if (isPotentialWinningHand(hand, state.melds[name])) {
+      settleWin({ winner: name, selfDraw: true });
+      return true;
+    }
   }
   const mistake = Math.random() * 100 < currentAi().mistakeRate;
   const discardIndex = chooseOpponentDiscard(hand, mistake);
+  if (discardIndex < 0) {
+    endDrawnGame();
+    return false;
+  }
   const [discarded] = hand.splice(discardIndex, 1);
   state.lastDiscard = discarded;
   state.lastDiscardFrom = name;
@@ -1161,6 +1187,11 @@ function playAiTurn(name, shouldDraw) {
 function tryAiClaim(discarded, from) {
   if (!discarded) return null;
   const candidates = turnOrder.filter((name) => name !== "你" && name !== from);
+  const huPlayer = candidates.find((name) => isPotentialWinningHand([...state.opponents[name], discarded], state.melds[name]));
+  if (huPlayer) {
+    settleWin({ winner: huPlayer, discarder: from, winningTile: discarded });
+    return huPlayer;
+  }
   const claim = candidates
     .map((name) => getAiClaim(name, discarded, from))
     .find(Boolean);
@@ -1172,6 +1203,7 @@ function tryAiClaim(discarded, from) {
   if (claim.action === "槓") removeTilesFromOpponent(claim.player, discarded.label, 3);
   if (claim.action === "碰") removeTilesFromOpponent(claim.player, discarded.label, 2);
   if (claim.action === "吃") removeOpponentSequenceForChi(claim.player, discarded);
+  state.melds[claim.player].push({ action: claim.action, tile: discarded });
   if (claim.action === "槓" && state.wall.length) {
     state.opponents[claim.player].push(state.wall.pop());
   }
@@ -1271,6 +1303,7 @@ function claim(action) {
       log(`槓後從牌牆末端補 ${supplement.label}。`);
     }
   }
+  state.melds["你"].push({ action, tile: state.lastDiscard });
   state.lastDiscard = null;
   state.lastDiscardFrom = null;
   state.lastDrawSelf = true;
@@ -1366,10 +1399,12 @@ function declareHu(selfDraw) {
     log("目前棄牌未達胡牌條件。");
     return;
   }
-  log(selfDraw ? "自摸成立：你以 17 張完成胡牌。" : `胡牌成立：你胡 ${state.lastDiscard.label}。`);
-  state.turn = "finished";
-  state.lastDiscard = null;
-  render();
+  settleWin({
+    winner: "你",
+    selfDraw,
+    discarder: selfDraw ? null : state.lastDiscardFrom,
+    winningTile: selfDraw ? state.hand[state.hand.length - 1] : state.lastDiscard,
+  });
 }
 
 function removeTilesFromHand(label, amount) {
@@ -1418,18 +1453,22 @@ function canKan() {
 function canHuDiscard() {
   if (!state.lastDiscard || state.turn === "finished") return false;
   if (state.lastDiscardFrom === "你") return false;
-  return isPotentialWinningHand([...state.hand, state.lastDiscard]);
+  return isPotentialWinningHand([...state.hand, state.lastDiscard], state.melds["你"]);
 }
 
 function canSelfDraw() {
   if (state.turn === "finished") return false;
-  return state.lastDrawSelf && state.hand.length === 17 && isPotentialWinningHand(state.hand);
+  return state.lastDrawSelf && state.hand.length === concealedWinLength("你") && isPotentialWinningHand(state.hand, state.melds["你"]);
+}
+
+function concealedWinLength(player) {
+  return 17 - (state.melds[player]?.length || 0) * 3;
 }
 
 function canTing() {
   if (state.turn === "finished") return false;
   if (state.isTing || state.hand.length !== 16) return false;
-  return uniqueTilesFromWallAndHand().some((tile) => isPotentialWinningHand([...state.hand, tile]));
+  return uniqueTilesFromWallAndHand().some((tile) => isPotentialWinningHand([...state.hand, tile], state.melds["你"]));
 }
 
 function uniqueTilesFromWallAndHand() {
@@ -1440,24 +1479,126 @@ function uniqueTilesFromWallAndHand() {
   return [...map.values()];
 }
 
-function isPotentialWinningHand(hand) {
-  if (hand.length !== 17) return false;
+function isPotentialWinningHand(hand, melds = []) {
+  const neededMelds = 5 - melds.length;
+  if (neededMelds < 0) return false;
+  if (hand.length !== neededMelds * 3 + 2) return false;
   const counts = countTiles(hand);
-  const pairCount = Object.values(counts).filter((count) => count >= 2).length;
-  const tripletCount = Object.values(counts).filter((count) => count >= 3).length;
-  const sequenceCount = countSequences(hand);
-  return pairCount >= 1 && tripletCount + sequenceCount >= 4;
+  return Object.entries(counts).some(([label, count]) => {
+    if (count < 2) return false;
+    const remaining = { ...counts, [label]: count - 2 };
+    return canFormMelds(remaining, neededMelds);
+  });
 }
 
-function countSequences(hand) {
-  let total = 0;
-  suits.forEach((suit) => {
-    const ranks = hand.filter((tile) => tile.suit === suit.name).map((tile) => tile.rank);
-    for (let rank = 1; rank <= 7; rank += 1) {
-      if (ranks.includes(rank) && ranks.includes(rank + 1) && ranks.includes(rank + 2)) total += 1;
+function canFormMelds(counts, meldsNeeded) {
+  if (meldsNeeded === 0) return Object.values(counts).every((count) => count === 0);
+  const label = Object.keys(counts).find((key) => counts[key] > 0);
+  if (!label) return false;
+  if (counts[label] >= 3) {
+    counts[label] -= 3;
+    if (canFormMelds(counts, meldsNeeded - 1)) return true;
+    counts[label] += 3;
+  }
+  const tile = tileFromLabel(label);
+  if (tile && tile.suit !== "字" && tile.suit !== "花" && tile.rank <= 7) {
+    const suit = suits.find((item) => item.name === tile.suit);
+    const labels = [tile.rank, tile.rank + 1, tile.rank + 2].map((rank) => `${suit.values[rank - 1]}${tile.suit}`);
+    if (labels.every((item) => counts[item] > 0)) {
+      labels.forEach((item) => {
+        counts[item] -= 1;
+      });
+      if (canFormMelds(counts, meldsNeeded - 1)) return true;
+      labels.forEach((item) => {
+        counts[item] += 1;
+      });
     }
+  }
+  return false;
+}
+
+function tileFromLabel(label) {
+  if (honors.includes(label)) return { label, suit: "字", rank: 0 };
+  if (flowers.includes(label)) return { label, suit: "花", rank: 0 };
+  const suit = suits.find((item) => label.endsWith(item.name));
+  if (!suit) return null;
+  const value = label.slice(0, -suit.name.length);
+  const rank = suit.values.indexOf(value) + 1;
+  if (!rank) return null;
+  return { label, suit: suit.name, rank };
+}
+
+function endDrawnGame() {
+  state.turn = "finished";
+  state.lastDiscard = null;
+  state.lastDiscardFrom = null;
+  state.lastDrawSelf = false;
+  log(`牌牆已摸完，本局流局。莊家 ${playerByWind[state.dealer] || "未定"} 連莊保留。`);
+  render();
+}
+
+function settleWin({ winner, selfDraw = false, discarder = null, winningTile = null }) {
+  const tai = calculateTai(winner, { selfDraw, winningTile });
+  const base = 100;
+  const taiValue = 20;
+  const payment = base + tai * taiValue;
+  const losers = selfDraw ? turnOrder.filter((name) => name !== winner) : [discarder].filter(Boolean);
+  losers.forEach((loser) => {
+    state.playerMoney[loser] -= payment;
+    state.playerMoney[winner] += payment;
   });
-  return total;
+  state.balance = state.playerMoney["你"];
+  const resultText = selfDraw
+    ? `${winner} 自摸，其他三家各付 ${payment}（${tai} 台）。`
+    : `${winner} 胡 ${winningTile?.label || state.lastDiscard?.label || ""}，${discarder} 放槍付 ${payment}（${tai} 台）。`;
+  log(resultText);
+  log(`目前金額：你 ${state.playerMoney["你"]}，玩家 A ${state.playerMoney["玩家 A"]}，玩家 B ${state.playerMoney["玩家 B"]}，玩家 C ${state.playerMoney["玩家 C"]}。`);
+  if (winner === playerByWind[state.dealer]) {
+    state.dealerStreak += 1;
+    log(`莊家胡牌，連莊 ${state.dealerStreak}。`);
+  } else {
+    state.dealerStreak = 0;
+  }
+  state.turn = "finished";
+  state.lastDiscard = null;
+  state.lastDiscardFrom = null;
+  state.lastDrawSelf = false;
+  render();
+}
+
+function calculateTai(player, { selfDraw = false } = {}) {
+  let tai = 0;
+  if (player === playerByWind[state.dealer]) tai += 1;
+  if (state.dealerStreak > 0 && player === playerByWind[state.dealer]) tai += state.dealerStreak * 2 + 1;
+  if (selfDraw) tai += 1;
+  if (!state.melds[player]?.length) tai += 1;
+  const hand = handFor(player) || [];
+  if (isAllTriplets(hand, state.melds[player])) tai += 4;
+  tai += countDragonTripletTai(hand, state.melds[player]);
+  return Math.max(1, tai);
+}
+
+function isAllTriplets(hand, melds = []) {
+  if (melds.some((meld) => meld.action === "吃")) return false;
+  const counts = countTiles(hand);
+  let pairUsed = false;
+  return Object.values(counts).every((count) => {
+    if (count === 3 || count === 0) return true;
+    if (count === 2 && !pairUsed) {
+      pairUsed = true;
+      return true;
+    }
+    return false;
+  });
+}
+
+function countDragonTripletTai(hand, melds = []) {
+  const counts = countTiles(hand);
+  return ["中", "發", "白"].reduce((total, label) => {
+    const inHand = counts[label] >= 3 ? 1 : 0;
+    const inMeld = melds.some((meld) => meld.tile?.label === label && (meld.action === "碰" || meld.action === "槓")) ? 1 : 0;
+    return total + Math.max(inHand, inMeld);
+  }, 0);
 }
 
 function countTiles(hand) {
@@ -1482,7 +1623,7 @@ function render() {
     button.type = "button";
     button.appendChild(createTileFace(tile));
     button.addEventListener("click", () => {
-      if (state.selectedIndex === index && state.hand.length >= 17) {
+      if (state.selectedIndex === index && state.lastDrawSelf) {
         discardTile();
         return;
       }
@@ -1493,6 +1634,7 @@ function render() {
   });
   document.getElementById("wallLabel").textContent = `牌牆：${state.wall.length}`;
   document.getElementById("roundRemain").textContent = `剩牌:${state.wall.length}張`;
+  document.getElementById("moneyLabel").textContent = `你:${state.playerMoney["你"]}`;
   const dealerPlayer = state.dealer ? playerByWind[state.dealer] : "";
   document.getElementById("dealerLabel").textContent = `莊家：${state.dealer ? `${dealerPlayer}（${state.dealer}）` : "抽位中"}`;
   document.getElementById("lastDiscard").textContent = `海底：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
@@ -1508,6 +1650,7 @@ function render() {
   renderOpponents();
   renderRiver();
   renderPromptActions();
+  updateBalanceLabels();
 }
 
 function renderOpponents() {
@@ -1610,9 +1753,12 @@ function getTurnText() {
 function renderPromptActions() {
   const prompts = getAvailablePrompts();
   let visible = false;
+  const labels = { hu: "胡", chi: "吃", pon: "碰", kan: "槓", ting: "聽", zimo: "自摸", pass: "過" };
   promptActionsEl.querySelectorAll("button").forEach((button) => {
     const available = Boolean(prompts[button.dataset.promptAction]);
     button.classList.toggle("available", available);
+    button.disabled = !available;
+    button.textContent = available && button.dataset.promptAction !== "pass" ? `可${labels[button.dataset.promptAction]}` : labels[button.dataset.promptAction];
     visible = visible || available;
   });
   promptActionsEl.classList.toggle("visible", visible);
