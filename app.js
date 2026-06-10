@@ -954,6 +954,9 @@ function handFor(player) {
 function giveOpeningTile(player) {
   if (!state.wall.length) return;
   const hand = handFor(player);
+  if (!hand) {
+    throw new Error(`找不到玩家 ${player} 的手牌。`);
+  }
   hand.push(state.wall.shift());
   replaceFlowers(player, hand, false);
   hand.sort(sortTile);
@@ -1018,17 +1021,28 @@ function drawSeatAndDealer() {
   const diceB = Math.ceil(Math.random() * 6);
   const diceC = Math.ceil(Math.random() * 6);
   const total = diceA + diceB + diceC;
-  const dealerWind = winds[(total - 1) % winds.length];
+  const dealerIndex = (total - 1) % turnOrder.length;
+  const dealerPlayer = turnOrder[dealerIndex];
+  const dealerWind = windByPlayer[dealerPlayer];
   state.dealer = dealerWind;
-  state.currentPlayer = playerByWind[dealerWind];
+  state.currentPlayer = dealerPlayer;
   state.turn = state.currentPlayer === "你" ? "player" : "ai";
   state.lastDrawSelf = true;
   state.lastDiscard = null;
   state.lastDiscardFrom = null;
   document.getElementById("diceBox").textContent = total;
-  giveOpeningTile(state.currentPlayer);
+  try {
+    giveOpeningTile(state.currentPlayer);
+  } catch (error) {
+    log(`起莊補牌失敗：${error.message}`);
+    state.turn = "setup";
+    state.dealer = null;
+    state.currentPlayer = "你";
+    render();
+    return;
+  }
   render();
-  log(`擲骰 ${diceA}+${diceB}+${diceC}=${total}，莊家為 ${playerByWind[dealerWind]}（${dealerWind}）。`);
+  log(`擲骰 ${diceA}+${diceB}+${diceC}=${total}，莊家為 ${dealerPlayer}（${dealerWind}）。`);
   if (state.currentPlayer === "你") {
     log("你是莊家，手牌已補成 17 張，請選一張牌打出。");
     render();
