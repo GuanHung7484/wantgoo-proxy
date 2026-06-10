@@ -1739,7 +1739,9 @@ function renderWan(face, rank) {
 }
 
 function renderHonor(face, label) {
-  face.classList.add("honor-face", label === "中" ? "red-honor" : label === "發" ? "green-honor" : "");
+  face.classList.add("honor-face");
+  if (label === "中") face.classList.add("red-honor");
+  if (label === "發") face.classList.add("green-honor");
   face.textContent = label;
 }
 
