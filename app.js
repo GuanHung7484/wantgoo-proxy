@@ -1703,12 +1703,22 @@ function createTileFace(tile) {
 
 function renderDots(face, rank) {
   face.classList.add("dot-face", `rank-${rank}`);
-  const count = rank === 1 ? 1 : rank;
-  for (let index = 0; index < count; index += 1) {
+  const layouts = {
+    1: [5],
+    2: [1, 9],
+    3: [1, 5, 9],
+    4: [1, 3, 7, 9],
+    5: [1, 3, 5, 7, 9],
+    6: [1, 3, 4, 6, 7, 9],
+    7: [1, 3, 4, 5, 6, 7, 9],
+    8: [1, 2, 3, 4, 6, 7, 8, 9],
+    9: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  };
+  layouts[rank].forEach((position, index) => {
     const dot = document.createElement("span");
-    dot.className = `dot dot-${(index % 3) + 1}`;
+    dot.className = `tile-mark mark-pos-${position} dot dot-${(index % 3) + 1}`;
     face.appendChild(dot);
-  }
+  });
 }
 
 function renderBamboo(face, rank) {
@@ -1720,11 +1730,21 @@ function renderBamboo(face, rank) {
     face.appendChild(bird);
     return;
   }
-  for (let index = 0; index < rank; index += 1) {
+  const layouts = {
+    2: [2, 8],
+    3: [2, 5, 8],
+    4: [1, 3, 7, 9],
+    5: [1, 3, 5, 7, 9],
+    6: [1, 3, 4, 6, 7, 9],
+    7: [1, 3, 4, 5, 6, 7, 9],
+    8: [1, 2, 3, 4, 6, 7, 8, 9],
+    9: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  };
+  layouts[rank].forEach((position, index) => {
     const bamboo = document.createElement("span");
-    bamboo.className = `bamboo bamboo-${index % 2}`;
+    bamboo.className = `tile-mark mark-pos-${position} bamboo bamboo-${index % 2}`;
     face.appendChild(bamboo);
-  }
+  });
 }
 
 function renderWan(face, rank) {
