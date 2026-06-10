@@ -1693,6 +1693,175 @@ function renderRiver() {
 function createTileFace(tile) {
   const face = document.createElement("span");
   face.className = "tile-face";
+  face.appendChild(createMahjongTileArt(tile));
+  return face;
+}
+
+function createMahjongTileArt(tile) {
+  const svg = svgEl("svg", {
+    class: "tile-art",
+    viewBox: "0 0 80 112",
+    role: "img",
+    "aria-label": tile.label,
+  });
+  if (tile.suit === "筒") drawDotTile(svg, tile.rank);
+  if (tile.suit === "條") drawBambooTile(svg, tile.rank);
+  if (tile.suit === "萬") drawWanTile(svg, tile.rank);
+  if (tile.suit === "字") drawHonorTile(svg, tile.label);
+  if (tile.suit === "花") drawFlowerTile(svg, tile.label);
+  return svg;
+}
+
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+  return el;
+}
+
+function svgText(parent, text, attrs = {}) {
+  const el = svgEl("text", attrs);
+  el.textContent = text;
+  parent.appendChild(el);
+  return el;
+}
+
+function tileMarkPositions(rank) {
+  const positions = {
+    1: [[40, 56]],
+    2: [[24, 28], [56, 84]],
+    3: [[24, 28], [40, 56], [56, 84]],
+    4: [[23, 28], [57, 28], [23, 84], [57, 84]],
+    5: [[23, 28], [57, 28], [40, 56], [23, 84], [57, 84]],
+    6: [[23, 24], [57, 24], [23, 56], [57, 56], [23, 88], [57, 88]],
+    7: [[23, 22], [57, 22], [23, 50], [40, 56], [57, 50], [23, 88], [57, 88]],
+    8: [[20, 22], [40, 22], [60, 22], [24, 50], [56, 50], [20, 88], [40, 88], [60, 88]],
+    9: [[20, 22], [40, 22], [60, 22], [20, 56], [40, 56], [60, 56], [20, 90], [40, 90], [60, 90]],
+  };
+  return positions[rank] || [];
+}
+
+function drawDotTile(svg, rank) {
+  const colors = ["#091aa8", "#008445", "#d8002b"];
+  if (rank === 1) {
+    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 23, fill: "#fffdf2", stroke: "#071052", "stroke-width": 3 }));
+    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 17, fill: "none", stroke: "#091aa8", "stroke-width": 5 }));
+    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 10, fill: "none", stroke: "#008445", "stroke-width": 5 }));
+    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 4, fill: "#d8002b" }));
+    return;
+  }
+  tileMarkPositions(rank).forEach(([x, y], index) => {
+    drawDotMark(svg, x, y, colors[index % colors.length]);
+  });
+}
+
+function drawDotMark(svg, x, y, color) {
+  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 9, fill: "#fffdf2", stroke: "#111111", "stroke-width": 1.4 }));
+  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 6.2, fill: "none", stroke: color, "stroke-width": 3 }));
+  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 2.1, fill: color }));
+}
+
+function drawBambooTile(svg, rank) {
+  if (rank === 1) {
+    drawBird(svg);
+    return;
+  }
+  tileMarkPositions(rank).forEach(([x, y], index) => {
+    drawBambooMark(svg, x, y, index % 3 === 1 ? "#d8002b" : "#007a3b");
+  });
+}
+
+function drawBambooMark(svg, x, y, color) {
+  const g = svgEl("g", { transform: `translate(${x} ${y})` });
+  g.appendChild(svgEl("rect", { x: -4.5, y: -17, width: 9, height: 34, rx: 4, fill: color, stroke: "#082f18", "stroke-width": 1.2 }));
+  [-8, 0, 8].forEach((offset) => {
+    g.appendChild(svgEl("path", { d: `M-6 ${offset} Q0 ${offset - 4} 6 ${offset}`, fill: "none", stroke: "#fff7df", "stroke-width": 1.2, "stroke-linecap": "round" }));
+  });
+  svg.appendChild(g);
+}
+
+function drawBird(svg) {
+  const g = svgEl("g", { transform: "translate(40 58) rotate(-8)" });
+  g.appendChild(svgEl("path", { d: "M-18 12 C-14 -12 7 -25 20 -7 C10 -9 4 -2 0 11 C-5 4 -12 5 -18 12Z", fill: "#008445", stroke: "#06351d", "stroke-width": 2 }));
+  g.appendChild(svgEl("path", { d: "M-5 2 C-1 -10 12 -11 19 -2 C9 -1 5 6 2 15Z", fill: "#d8002b", opacity: 0.95 }));
+  g.appendChild(svgEl("path", { d: "M-15 12 C-20 22 -22 28 -26 32", fill: "none", stroke: "#008445", "stroke-width": 3, "stroke-linecap": "round" }));
+  g.appendChild(svgEl("path", { d: "M-3 15 C-1 26 1 31 4 36", fill: "none", stroke: "#d8002b", "stroke-width": 3, "stroke-linecap": "round" }));
+  g.appendChild(svgEl("circle", { cx: 11, cy: -8, r: 2.2, fill: "#071052" }));
+  g.appendChild(svgEl("path", { d: "M18 -8 L29 -12 L20 -3Z", fill: "#071052" }));
+  svg.appendChild(g);
+}
+
+function drawWanTile(svg, rank) {
+  svgText(svg, chineseRanks[rank - 1], {
+    x: 40,
+    y: 46,
+    "text-anchor": "middle",
+    "font-family": "'Noto Sans TC', serif",
+    "font-size": 30,
+    "font-weight": 900,
+    fill: "#111111",
+  });
+  svgText(svg, "萬", {
+    x: 40,
+    y: 83,
+    "text-anchor": "middle",
+    "font-family": "'Noto Sans TC', serif",
+    "font-size": 32,
+    "font-weight": 900,
+    fill: "#d8002b",
+  });
+}
+
+function drawHonorTile(svg, label) {
+  if (label === "白") {
+    svg.appendChild(svgEl("rect", { x: 22, y: 27, width: 36, height: 56, rx: 2, fill: "none", stroke: "#111111", "stroke-width": 4 }));
+    svg.appendChild(svgEl("rect", { x: 29, y: 35, width: 22, height: 40, rx: 1, fill: "none", stroke: "#111111", "stroke-width": 2 }));
+    return;
+  }
+  const color = label === "中" ? "#d8002b" : label === "發" ? "#008445" : "#111111";
+  svgText(svg, label, {
+    x: 40,
+    y: 72,
+    "text-anchor": "middle",
+    "font-family": "'Noto Sans TC', serif",
+    "font-size": 42,
+    "font-weight": 900,
+    fill: color,
+  });
+}
+
+function drawFlowerTile(svg, label) {
+  const flowerNumber = flowers.indexOf(label) + 1;
+  svgText(svg, String(flowerNumber), {
+    x: 14,
+    y: 22,
+    "text-anchor": "middle",
+    "font-family": "'Noto Sans TC', serif",
+    "font-size": 16,
+    "font-weight": 900,
+    fill: "#d8002b",
+  });
+  svgText(svg, label, {
+    x: 40,
+    y: 30,
+    "text-anchor": "middle",
+    "font-family": "'Noto Sans TC', serif",
+    "font-size": 21,
+    "font-weight": 900,
+    fill: "#111111",
+  });
+  svg.appendChild(svgEl("path", { d: "M39 88 C36 68 43 55 37 39", fill: "none", stroke: "#008445", "stroke-width": 3.2, "stroke-linecap": "round" }));
+  svg.appendChild(svgEl("path", { d: "M38 63 C27 56 22 51 18 42", fill: "none", stroke: "#008445", "stroke-width": 2.4, "stroke-linecap": "round" }));
+  svg.appendChild(svgEl("path", { d: "M40 68 C51 62 57 54 61 45", fill: "none", stroke: "#008445", "stroke-width": 2.4, "stroke-linecap": "round" }));
+  [[18, 41], [61, 44], [37, 38]].forEach(([x, y]) => {
+    svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 5, fill: "#d8002b" }));
+    svg.appendChild(svgEl("circle", { cx: x + 5, cy: y + 2, r: 4, fill: "#e83a55" }));
+    svg.appendChild(svgEl("circle", { cx: x - 4, cy: y + 4, r: 4, fill: "#e83a55" }));
+  });
+}
+
+function createLegacyTileFace(tile) {
+  const face = document.createElement("span");
+  face.className = "tile-face";
   if (tile.suit === "筒") renderDots(face, tile.rank);
   if (tile.suit === "條") renderBamboo(face, tile.rank);
   if (tile.suit === "萬") renderWan(face, tile.rank);

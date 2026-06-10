@@ -1802,6 +1802,18 @@ main {
   height: 100%;
 }
 
+.tile-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.river-tile .tile-art {
+  width: 108%;
+  height: 108%;
+}
+
 .dot-face,
 .bamboo-face {
   grid-template-columns: repeat(3, 1fr);
