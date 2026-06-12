@@ -1768,9 +1768,11 @@ function renderOpponents() {
 
 function renderRiver() {
   riverTilesEl.innerHTML = "";
-  state.river.slice(-24).forEach(({ tile, from }) => {
+  const discards = state.river.filter((entry) => !entry.flower);
+  discards.forEach(({ tile, from }, index) => {
     const item = document.createElement("span");
-    item.className = `river-tile from-${from === "你" ? "self" : "ai"}`;
+    item.className = `river-tile from-${from === "你" ? "self" : "ai"}${index === discards.length - 1 ? " latest" : ""}`;
+    item.dataset.from = from;
     item.title = `${from}打出 ${tile.label}`;
     item.appendChild(createTileFace(tile));
     riverTilesEl.appendChild(item);

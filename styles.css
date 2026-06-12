@@ -1669,11 +1669,11 @@ main {
 
 .discard-river {
   position: absolute;
-  inset: 23% 27% 29%;
+  inset: 18% 18% 22%;
   z-index: 2;
   display: grid;
-  grid-template-rows: auto auto 1fr;
-  gap: 6px;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 8px;
   justify-items: center;
   align-items: start;
   text-align: center;
@@ -1707,10 +1707,15 @@ main {
 
 .river-tiles {
   display: grid;
-  grid-template-columns: repeat(6, minmax(22px, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(10, minmax(30px, 42px));
+  grid-auto-rows: minmax(40px, 56px);
+  gap: 6px;
+  justify-content: center;
+  align-content: start;
   width: 100%;
-  max-width: 280px;
+  max-width: 480px;
+  max-height: 186px;
+  overflow: hidden;
 }
 
 .river-tile {
@@ -1730,6 +1735,11 @@ main {
 
 .river-tile.from-self {
   outline: 2px solid rgba(255, 210, 91, 0.95);
+}
+
+.river-tile.latest {
+  outline: 3px solid rgba(255, 92, 226, 0.95);
+  transform: translateY(-2px);
 }
 
 .prompt-actions {
@@ -2711,13 +2721,16 @@ main {
   }
 
   .discard-river {
-    inset: 28% 16% 34%;
+    inset: 22% 10% 27%;
     padding: 8px;
   }
 
   .river-tiles {
-    grid-template-columns: repeat(6, minmax(18px, 1fr));
-    gap: 3px;
+    grid-template-columns: repeat(8, minmax(24px, 36px));
+    grid-auto-rows: minmax(32px, 48px);
+    gap: 4px;
+    max-width: 340px;
+    max-height: 150px;
   }
 
   .prompt-actions {
@@ -2910,12 +2923,15 @@ main {
   }
 
   .discard-river {
-    inset: 23% 25% 32%;
+    inset: 22% 12% 30%;
   }
 
   .river-tiles {
-    grid-template-columns: repeat(8, minmax(18px, 1fr));
-    max-width: 260px;
+    grid-template-columns: repeat(8, minmax(20px, 32px));
+    grid-auto-rows: minmax(28px, 42px);
+    gap: 3px;
+    max-width: 300px;
+    max-height: 132px;
   }
 
   .dice {
