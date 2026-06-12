@@ -27,7 +27,12 @@ const state = {
   lastDiscard: null,
   river: [],
   lastDrawSelf: false,
-  isTing: false,
+  ting: {
+    你: false,
+    "玩家 A": false,
+    "玩家 B": false,
+    "玩家 C": false,
+  },
   turn: "setup",
   currentPlayer: "你",
   lastDiscardFrom: null,
@@ -933,7 +938,9 @@ function startRound() {
   state.dealer = null;
   state.lastDiscard = null;
   state.lastDrawSelf = false;
-  state.isTing = false;
+  Object.keys(state.ting).forEach((name) => {
+    state.ting[name] = false;
+  });
   state.turn = "setup";
   state.currentPlayer = "你";
   state.lastDiscardFrom = null;
@@ -1075,13 +1082,17 @@ function drawTile() {
     return;
   }
   if (state.lastDiscard && state.lastDiscardFrom !== "你") {
-    if (nextPlayer(state.lastDiscardFrom) !== "你") {
-      log(`目前只能先回應 ${state.lastDiscard.label}，請按「過」放棄吃碰槓胡。`);
-      return;
-    }
-    log(`你放棄 ${state.lastDiscard.label} 的吃碰槓胡，改為摸牌。`);
+    const next = nextPlayer(state.lastDiscardFrom);
+    log(`不吃碰槓胡 ${state.lastDiscard.label}，繼續摸牌。`);
     state.lastDiscard = null;
     state.lastDiscardFrom = null;
+    if (next !== "你") {
+      state.currentPlayer = next;
+      state.turn = "ai";
+      render();
+      scheduleAiTurn(true);
+      return;
+    }
   }
   const tile = state.wall.shift();
   state.hand.push(tile);
@@ -1119,6 +1130,7 @@ function discardTile() {
   state.lastDiscardFrom = "你";
   state.river.push({ tile, from: "你" });
   state.lastDrawSelf = false;
+  updateTingStatus("你", true);
   state.selectedIndex = Math.max(0, state.selectedIndex - 1);
   state.turn = "wait";
   log(`你打出 ${tile.label}。電腦依目前 AI 強度思考。`);
@@ -1140,7 +1152,7 @@ function resolveAfterDiscard(from) {
   if (from !== "你" && hasPlayerResponseToDiscard()) {
     state.currentPlayer = "你";
     state.turn = "player";
-    log(`電腦打出 ${state.lastDiscard.label}，你可以吃、碰、槓、胡，或按「過」。`);
+    log(`電腦打出 ${state.lastDiscard.label}，可吃、碰、槓、胡時會顯示動作；按「摸牌」可不吃碰槓胡。`);
     render();
     return;
   }
@@ -1191,6 +1203,7 @@ function playAiTurn(name, shouldDraw) {
   state.lastDiscard = discarded;
   state.lastDiscardFrom = name;
   state.river.push({ tile: discarded, from: name });
+  updateTingStatus(name, true);
   const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
   log(`${name}（AI ${currentAi().label}）${shouldDraw ? "摸打一張" : "莊家先打"}，${thinking}：${discarded.label}。`);
   render();
@@ -1337,14 +1350,12 @@ function handlePromptAction(action) {
   if (action === "hu") declareHu(false);
   if (action === "zimo") declareHu(true);
   if (action === "ting") {
-    state.isTing = true;
-    log("聽牌提示成立：你已進入聽牌狀態，接下來可等胡或自摸。");
-    render();
+    declareTing();
   }
   if (action === "pass") {
     const from = state.lastDiscardFrom;
     const next = from ? nextPlayer(from) : "你";
-    log("你選擇過，不吃碰槓胡。");
+    log("不吃碰槓胡。");
     state.lastDiscard = null;
     state.lastDiscardFrom = null;
     state.lastDrawSelf = false;
@@ -1441,7 +1452,7 @@ function getAvailablePrompts() {
     kan: canKan(),
     ting: canTing(),
     zimo: canSelfDraw(),
-    pass: Boolean(state.lastDiscard) && state.lastDiscardFrom !== "你" && state.turn !== "finished",
+    pass: false,
   };
 }
 
@@ -1481,16 +1492,81 @@ function concealedWinLength(player) {
 
 function canTing() {
   if (state.turn === "finished") return false;
-  if (state.isTing || state.hand.length !== 16) return false;
-  return uniqueTilesFromWallAndHand().some((tile) => isPotentialWinningHand([...state.hand, tile], state.melds["你"]));
+  if (state.ting["你"]) return false;
+  return getTingOptions("你").length > 0;
+}
+
+function declareTing() {
+  const options = getTingOptions("你");
+  if (!options.length) {
+    log("目前還沒有聽牌。");
+    return;
+  }
+  const selected = state.hand[state.selectedIndex];
+  const selectedOption = options.find((option) => option.discard?.label === selected?.label) || options[0];
+  if (selectedOption.discard) {
+    const index = state.hand.findIndex((tile) => tile === selectedOption.discard);
+    if (index >= 0) state.selectedIndex = index;
+    state.ting["你"] = true;
+    log(`宣告聽牌，打出 ${selectedOption.discard.label} 後可聽 ${selectedOption.waits.map((tile) => tile.label).join("、")}。`);
+    discardTile();
+    return;
+  }
+  state.ting["你"] = true;
+  log(`聽牌成立：可聽 ${selectedOption.waits.map((tile) => tile.label).join("、")}。`);
+  render();
 }
 
 function uniqueTilesFromWallAndHand() {
   const map = new Map();
-  [...state.wall, ...state.hand].forEach((tile) => {
+  [...state.wall, ...state.hand, ...allTileTypes()].forEach((tile) => {
     if (!map.has(tile.label)) map.set(tile.label, tile);
   });
   return [...map.values()];
+}
+
+function allTileTypes() {
+  return [
+    ...suits.flatMap((suit) => suit.values.map((value, index) => ({ label: `${value}${suit.name}`, suit: suit.name, rank: index + 1 }))),
+    ...honors.map((label) => ({ label, suit: "字", rank: 0 })),
+  ];
+}
+
+function getTingOptions(player) {
+  const hand = handFor(player) || [];
+  const melds = state.melds[player] || [];
+  const readyLength = concealedWinLength(player) - 1;
+  const winLength = concealedWinLength(player);
+  if (hand.length === readyLength) {
+    const waits = getWinningWaits(hand, melds);
+    return waits.length ? [{ discard: null, waits }] : [];
+  }
+  if (hand.length !== winLength) return [];
+  const seenDiscards = new Set();
+  return hand
+    .map((discard) => {
+      if (seenDiscards.has(discard.label)) return null;
+      seenDiscards.add(discard.label);
+      const rest = hand.filter((tile) => tile !== discard);
+      const waits = getWinningWaits(rest, melds);
+      return waits.length ? { discard, waits } : null;
+    })
+    .filter(Boolean);
+}
+
+function getWinningWaits(hand, melds = []) {
+  return uniqueTilesFromWallAndHand().filter((tile) => isPotentialWinningHand([...hand, tile], melds));
+}
+
+function updateTingStatus(player, force = false) {
+  if (state.turn === "finished") return;
+  if (force || player !== "你" || !state.ting["你"]) {
+    state.ting[player] = getTingOptions(player).some((option) => !option.discard);
+  }
+}
+
+function updateAllTingStatuses() {
+  turnOrder.forEach((player) => updateTingStatus(player));
 }
 
 function isPotentialWinningHand(hand, melds = []) {
@@ -1628,6 +1704,7 @@ function sortTile(a, b) {
 }
 
 function render() {
+  updateAllTingStatuses();
   state.hand.sort(sortTile);
   handEl.innerHTML = "";
   state.hand.forEach((tile, index) => {
@@ -1637,7 +1714,7 @@ function render() {
     button.type = "button";
     button.appendChild(createTileFace(tile));
     button.addEventListener("click", () => {
-      if (state.selectedIndex === index && state.lastDrawSelf) {
+      if (state.selectedIndex === index && canDiscardSelectedTile()) {
         discardTile();
         return;
       }
@@ -1651,9 +1728,9 @@ function render() {
   document.getElementById("moneyLabel").textContent = `你:${state.playerMoney["你"]}`;
   const dealerPlayer = state.dealer ? playerByWind[state.dealer] : "";
   document.getElementById("dealerLabel").textContent = `莊家：${state.dealer ? `${dealerPlayer}（${state.dealer}）` : "抽位中"}`;
-  document.getElementById("lastDiscard").textContent = `海底：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
+  document.getElementById("lastDiscard").textContent = `棄牌：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
   document.getElementById("turnLabel").textContent = getTurnText();
-  document.getElementById("playerSeatStatus").textContent = state.isTing ? `聽牌 ${state.hand.length}` : `手牌 ${state.hand.length}`;
+  document.getElementById("playerSeatStatus").textContent = state.ting["你"] ? `聽 ${state.hand.length}` : `手牌 ${state.hand.length}`;
   document.getElementById("seatDrawBtn").disabled = false;
   document.getElementById("drawBtn").disabled = false;
   document.getElementById("discardBtn").disabled = false;
@@ -1667,6 +1744,12 @@ function render() {
   updateBalanceLabels();
 }
 
+function canDiscardSelectedTile() {
+  if (!state.dealer || state.turn === "finished") return false;
+  if (state.currentPlayer !== "你") return false;
+  return state.lastDrawSelf || state.hand.length === concealedWinLength("你");
+}
+
 function renderOpponents() {
   Object.entries(opponentEls).forEach(([name, el]) => {
     el.innerHTML = "";
@@ -1676,6 +1759,10 @@ function renderOpponents() {
       back.className = "tile-back";
       el.appendChild(back);
     }
+  });
+  document.querySelectorAll(".ai-seat-label").forEach((label) => {
+    const name = label.previousElementSibling?.textContent;
+    label.textContent = `${state.ting[name] ? "聽 | " : ""}AI ${currentAi().label}`;
   });
 }
 
@@ -1958,12 +2045,12 @@ function getTurnText() {
 function renderPromptActions() {
   const prompts = getAvailablePrompts();
   let visible = false;
-  const labels = { hu: "胡", chi: "吃", pon: "碰", kan: "槓", ting: "聽", zimo: "自摸", pass: "過" };
+  const labels = { hu: "胡", chi: "吃", pon: "碰", kan: "槓", ting: "聽", zimo: "自摸", pass: "" };
   promptActionsEl.querySelectorAll("button").forEach((button) => {
     const available = Boolean(prompts[button.dataset.promptAction]);
     button.classList.toggle("available", available);
     button.disabled = !available;
-    button.textContent = available && button.dataset.promptAction !== "pass" ? `可${labels[button.dataset.promptAction]}` : labels[button.dataset.promptAction];
+    button.textContent = labels[button.dataset.promptAction];
     visible = visible || available;
   });
   promptActionsEl.classList.toggle("visible", visible);
