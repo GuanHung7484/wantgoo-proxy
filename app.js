@@ -67,12 +67,16 @@ const chineseRanks = ["一", "二", "三", "四", "伍", "六", "七", "八", "�
 const turnOrder = ["你", "玩家 A", "玩家 B", "玩家 C"];
 const windByPlayer = { 你: "東", "玩家 A": "南", "玩家 B": "西", "玩家 C": "北" };
 const playerByWind = { 東: "你", 南: "玩家 A", 西: "玩家 B", 北: "玩家 C" };
+const speechRankNames = ["一", "二", "三", "四", "五", "六", "七", "八", "九"];
 
 const handEl = document.getElementById("playerHand");
 const logEl = document.getElementById("gameLog");
 const aiSelect = document.getElementById("aiDifficulty");
 const promptActionsEl = document.getElementById("promptActions");
 const riverTilesEl = document.getElementById("riverTiles");
+const playerMeldsEl = document.getElementById("playerMelds");
+const voiceBtn = document.getElementById("voiceBtn");
+const musicBtn = document.getElementById("musicBtn");
 const opponentEls = {
   "玩家 A": document.getElementById("opponentLeft"),
   "玩家 B": document.getElementById("opponentTop"),
@@ -116,6 +120,16 @@ const slotState = {
   leverPulled: false,
 };
 let slotCellEls = [];
+
+const mahjongAudio = {
+  voiceEnabled: true,
+  musicEnabled: false,
+  speechVoice: null,
+  context: null,
+  gain: null,
+  timer: null,
+  noteIndex: 0,
+};
 
 const moleState = {
   mode: "single",
@@ -1034,7 +1048,7 @@ function drawSeatAndDealer() {
   state.dealer = dealerWind;
   state.currentPlayer = dealerPlayer;
   state.turn = state.currentPlayer === "你" ? "player" : "ai";
-  state.lastDrawSelf = true;
+  state.lastDrawSelf = state.currentPlayer === "你";
   state.lastDiscard = null;
   state.lastDiscardFrom = null;
   document.getElementById("diceBox").textContent = total;
@@ -1134,6 +1148,7 @@ function discardTile() {
   state.selectedIndex = Math.max(0, state.selectedIndex - 1);
   state.turn = "wait";
   log(`你打出 ${tile.label}。電腦依目前 AI 強度思考。`);
+  speakDiscard(tile);
   render();
   resolveAfterDiscard("你");
 }
@@ -1152,6 +1167,7 @@ function resolveAfterDiscard(from) {
   if (from !== "你" && hasPlayerResponseToDiscard()) {
     state.currentPlayer = "你";
     state.turn = "player";
+    state.lastDrawSelf = false;
     log(`電腦打出 ${state.lastDiscard.label}，可吃、碰、槓、胡時會顯示動作；按「摸牌」可不吃碰槓胡。`);
     render();
     return;
@@ -1206,6 +1222,7 @@ function playAiTurn(name, shouldDraw) {
   updateTingStatus(name, true);
   const thinking = mistake ? "失誤亂打" : "保留好牌後出牌";
   log(`${name}（AI ${currentAi().label}）${shouldDraw ? "摸打一張" : "莊家先打"}，${thinking}：${discarded.label}。`);
+  speakDiscard(discarded);
   render();
   resolveAfterDiscard(name);
   return true;
@@ -1318,6 +1335,7 @@ function claim(action) {
     log(`不能吃 ${state.lastDiscard.label}：手上沒有可組成順子的牌。`);
     return;
   }
+  const meld = buildMeld(action, state.lastDiscard, false);
   log(`${action}牌成立：以 ${state.lastDiscard.label} 組成面子。`);
   state.river.pop();
   if (action === "碰") removeTilesFromHand(state.lastDiscard.label, 2);
@@ -1330,7 +1348,7 @@ function claim(action) {
       log(`槓後從牌牆末端補 ${supplement.label}。`);
     }
   }
-  state.melds["你"].push({ action, tile: state.lastDiscard });
+  state.melds["你"].push(meld);
   state.lastDiscard = null;
   state.lastDiscardFrom = null;
   state.lastDrawSelf = true;
@@ -1404,7 +1422,9 @@ function concealedKan() {
     return;
   }
   const [label] = entry;
+  const tile = state.hand.find((item) => item.label === label) || tileFromLabel(label);
   removeTilesFromHand(label, 4);
+  state.melds["你"].push({ action: "槓", tile, tiles: Array.from({ length: 4 }, () => tile), concealed: true });
   log(`暗槓成立：你槓 ${label}。`);
   if (state.wall.length) {
     const supplement = state.wall.pop();
@@ -1413,6 +1433,24 @@ function concealedKan() {
     log(`槓後從牌牆末端補 ${supplement.label}。`);
   }
   render();
+}
+
+function buildMeld(action, claimedTile, concealed) {
+  if (action === "吃") {
+    const ranks = findChiRanks(state.hand, claimedTile) || [];
+    const tiles = ranks
+      .map((rank) => state.hand.find((tile) => tile.suit === claimedTile.suit && tile.rank === rank) || tileFromSuitRank(claimedTile.suit, rank))
+      .filter(Boolean);
+    return { action, tile: claimedTile, tiles: [...tiles, claimedTile].sort(sortTile), concealed };
+  }
+  const size = action === "槓" ? 4 : 3;
+  return { action, tile: claimedTile, tiles: Array.from({ length: size }, () => claimedTile), concealed };
+}
+
+function tileFromSuitRank(suitName, rank) {
+  const suit = suits.find((item) => item.name === suitName);
+  if (!suit || rank < 1 || rank > suit.values.length) return null;
+  return { label: `${suit.values[rank - 1]}${suitName}`, suit: suitName, rank };
 }
 
 function declareHu(selfDraw) {
@@ -1731,23 +1769,174 @@ function render() {
   document.getElementById("lastDiscard").textContent = `棄牌：${state.lastDiscard ? state.lastDiscard.label : "無"}`;
   document.getElementById("turnLabel").textContent = getTurnText();
   document.getElementById("playerSeatStatus").textContent = state.ting["你"] ? `聽 ${state.hand.length}` : `手牌 ${state.hand.length}`;
-  document.getElementById("seatDrawBtn").disabled = false;
-  document.getElementById("drawBtn").disabled = false;
-  document.getElementById("discardBtn").disabled = false;
+  document.getElementById("seatDrawBtn").disabled = Boolean(state.dealer) || state.turn === "finished";
+  document.getElementById("drawBtn").disabled = !canDrawTile();
+  document.getElementById("discardBtn").disabled = !canDiscardSelectedTile();
   document.querySelectorAll(".seat-marker").forEach((seat) => {
     seat.classList.toggle("dealer-seat", seat.dataset.wind === state.dealer);
     seat.classList.toggle("current", seat.dataset.wind === windByPlayer[state.currentPlayer]);
   });
   renderOpponents();
+  renderPlayerMelds();
   renderRiver();
   renderPromptActions();
+  updateAudioButtons();
   updateBalanceLabels();
+}
+
+function renderPlayerMelds() {
+  playerMeldsEl.innerHTML = "";
+  const melds = state.melds["你"] || [];
+  playerMeldsEl.classList.toggle("has-melds", melds.length > 0);
+  melds.forEach((meld) => {
+    const group = document.createElement("div");
+    group.className = `meld-group${meld.concealed ? " concealed" : ""}`;
+    group.setAttribute("aria-label", `${meld.concealed ? "暗" : "明"}${meld.action}`);
+
+    const label = document.createElement("span");
+    label.className = "meld-label";
+    label.textContent = meld.concealed ? "暗槓" : meld.action;
+    group.appendChild(label);
+
+    const tiles = meld.tiles?.length ? meld.tiles : buildMeld(meld.action, meld.tile, meld.concealed).tiles;
+    tiles.forEach((tile, index) => {
+      const item = document.createElement("span");
+      item.className = "meld-tile";
+      if (meld.concealed && (index === 0 || index === tiles.length - 1)) {
+        const back = document.createElement("span");
+        back.className = "tile-back";
+        item.appendChild(back);
+      } else {
+        item.appendChild(createTileFace(tile));
+      }
+      group.appendChild(item);
+    });
+
+    playerMeldsEl.appendChild(group);
+  });
 }
 
 function canDiscardSelectedTile() {
   if (!state.dealer || state.turn === "finished") return false;
   if (state.currentPlayer !== "你") return false;
   return state.lastDrawSelf || state.hand.length === concealedWinLength("你");
+}
+
+function canDrawTile() {
+  if (!state.dealer || state.turn === "finished") return false;
+  if (!state.wall.length) return false;
+  if (state.currentPlayer !== "你") return false;
+  return !state.lastDrawSelf;
+}
+
+function updateAudioButtons() {
+  voiceBtn.textContent = `台語語音：${mahjongAudio.voiceEnabled ? "開" : "關"}`;
+  musicBtn.textContent = `背景音樂：${mahjongAudio.musicEnabled ? "開" : "關"}`;
+  voiceBtn.classList.toggle("active", mahjongAudio.voiceEnabled);
+  musicBtn.classList.toggle("active", mahjongAudio.musicEnabled);
+}
+
+function toggleVoice() {
+  mahjongAudio.voiceEnabled = !mahjongAudio.voiceEnabled;
+  if (!mahjongAudio.voiceEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+  updateAudioButtons();
+}
+
+function toggleMusic() {
+  if (mahjongAudio.musicEnabled) {
+    stopMahjongMusic();
+  } else {
+    startMahjongMusic();
+  }
+  updateAudioButtons();
+}
+
+function speakDiscard(tile) {
+  if (!mahjongAudio.voiceEnabled || !("speechSynthesis" in window)) return;
+  const text = tileSpeechName(tile);
+  if (!text) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "nan-TW";
+  utterance.rate = 0.92;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  const voice = getTaiwaneseSpeechVoice();
+  if (voice) {
+    utterance.voice = voice;
+    utterance.lang = voice.lang || utterance.lang;
+  }
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+function getTaiwaneseSpeechVoice() {
+  if (mahjongAudio.speechVoice) return mahjongAudio.speechVoice;
+  if (!("speechSynthesis" in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find((voice) => /nan|hokkien|minnan|taiwanese|閩南|台語|臺語/i.test(`${voice.lang} ${voice.name}`));
+  mahjongAudio.speechVoice = preferred || voices.find((voice) => /zh-TW|zh_Hant|Taiwan|台灣|臺灣/i.test(`${voice.lang} ${voice.name}`)) || null;
+  return mahjongAudio.speechVoice;
+}
+
+function tileSpeechName(tile) {
+  if (!tile) return "";
+  if (tile.suit === "萬") return `${speechRankNames[tile.rank - 1]}萬`;
+  if (tile.suit === "筒") return `${speechRankNames[tile.rank - 1]}筒`;
+  if (tile.suit === "條") return `${speechRankNames[tile.rank - 1]}條`;
+  return tile.label;
+}
+
+function startMahjongMusic() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) {
+    log("此瀏覽器不支援背景音樂。");
+    return;
+  }
+  if (!mahjongAudio.context) {
+    mahjongAudio.context = new AudioContext();
+    mahjongAudio.gain = mahjongAudio.context.createGain();
+    mahjongAudio.gain.gain.value = 0.075;
+    mahjongAudio.gain.connect(mahjongAudio.context.destination);
+  }
+  mahjongAudio.context.resume();
+  mahjongAudio.musicEnabled = true;
+  if (mahjongAudio.timer) return;
+  scheduleMahjongMusicNote();
+  mahjongAudio.timer = setInterval(scheduleMahjongMusicNote, 520);
+}
+
+function stopMahjongMusic() {
+  mahjongAudio.musicEnabled = false;
+  if (mahjongAudio.timer) {
+    clearInterval(mahjongAudio.timer);
+    mahjongAudio.timer = null;
+  }
+  if (mahjongAudio.gain) {
+    mahjongAudio.gain.gain.setTargetAtTime(0, mahjongAudio.context.currentTime, 0.04);
+    setTimeout(() => {
+      if (mahjongAudio.gain && !mahjongAudio.musicEnabled) mahjongAudio.gain.gain.value = 0.075;
+    }, 120);
+  }
+}
+
+function scheduleMahjongMusicNote() {
+  if (!mahjongAudio.musicEnabled || !mahjongAudio.context || !mahjongAudio.gain) return;
+  const notes = [392, 440, 523.25, 587.33, 659.25, 587.33, 523.25, 440, 392, 329.63, 392, 440];
+  const time = mahjongAudio.context.currentTime + 0.02;
+  const frequency = notes[mahjongAudio.noteIndex % notes.length];
+  mahjongAudio.noteIndex += 1;
+
+  const osc = mahjongAudio.context.createOscillator();
+  const noteGain = mahjongAudio.context.createGain();
+  osc.type = mahjongAudio.noteIndex % 4 === 0 ? "triangle" : "sine";
+  osc.frequency.value = frequency;
+  noteGain.gain.setValueAtTime(0, time);
+  noteGain.gain.linearRampToValueAtTime(0.32, time + 0.03);
+  noteGain.gain.exponentialRampToValueAtTime(0.001, time + 0.46);
+  osc.connect(noteGain);
+  noteGain.connect(mahjongAudio.gain);
+  osc.start(time);
+  osc.stop(time + 0.5);
 }
 
 function renderOpponents() {
@@ -1830,12 +2019,23 @@ function tileMarkPositions(rank) {
 }
 
 function drawDotTile(svg, rank) {
-  const colors = ["#091aa8", "#008445", "#d8002b"];
+  const colors = ["#53679a", "#55a27d", "#d36a70"];
   if (rank === 1) {
-    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 23, fill: "#fffdf2", stroke: "#071052", "stroke-width": 3 }));
-    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 17, fill: "none", stroke: "#091aa8", "stroke-width": 5 }));
-    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 10, fill: "none", stroke: "#008445", "stroke-width": 5 }));
-    svg.appendChild(svgEl("circle", { cx: 40, cy: 56, r: 4, fill: "#d8002b" }));
+    const g = svgEl("g", { transform: "translate(40 56)" });
+    for (let index = 0; index < 16; index += 1) {
+      g.appendChild(svgEl("ellipse", {
+        cx: 0,
+        cy: -17,
+        rx: 3.3,
+        ry: 9,
+        fill: index % 2 ? "#d36a70" : "#55a27d",
+        transform: `rotate(${index * 22.5})`,
+      }));
+    }
+    g.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 16, fill: "#fffdf2", stroke: "#55a27d", "stroke-width": 3 }));
+    g.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 9, fill: "none", stroke: "#d36a70", "stroke-width": 4 }));
+    g.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 3, fill: "#d36a70" }));
+    svg.appendChild(g);
     return;
   }
   tileMarkPositions(rank).forEach(([x, y], index) => {
@@ -1844,9 +2044,9 @@ function drawDotTile(svg, rank) {
 }
 
 function drawDotMark(svg, x, y, color) {
-  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 9, fill: "#fffdf2", stroke: "#111111", "stroke-width": 1.4 }));
-  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 6.2, fill: "none", stroke: color, "stroke-width": 3 }));
-  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 2.1, fill: color }));
+  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 9, fill: "#fffdf2", stroke: color, "stroke-width": 2.2 }));
+  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 5.3, fill: "none", stroke: color, "stroke-width": 2.2 }));
+  svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 1.8, fill: color }));
 }
 
 function drawBambooTile(svg, rank) {
@@ -1855,97 +2055,94 @@ function drawBambooTile(svg, rank) {
     return;
   }
   tileMarkPositions(rank).forEach(([x, y], index) => {
-    drawBambooMark(svg, x, y, index % 3 === 1 ? "#d8002b" : "#007a3b");
+    drawBambooMark(svg, x, y, index % 3 === 1 ? "#d36a70" : "#55a27d");
   });
 }
 
 function drawBambooMark(svg, x, y, color) {
   const g = svgEl("g", { transform: `translate(${x} ${y})` });
-  g.appendChild(svgEl("rect", { x: -4.5, y: -17, width: 9, height: 34, rx: 4, fill: color, stroke: "#082f18", "stroke-width": 1.2 }));
+  g.appendChild(svgEl("rect", { x: -3.6, y: -17, width: 7.2, height: 34, rx: 4, fill: color }));
   [-8, 0, 8].forEach((offset) => {
-    g.appendChild(svgEl("path", { d: `M-6 ${offset} Q0 ${offset - 4} 6 ${offset}`, fill: "none", stroke: "#fff7df", "stroke-width": 1.2, "stroke-linecap": "round" }));
+    g.appendChild(svgEl("path", { d: `M-5.2 ${offset} Q0 ${offset - 4} 5.2 ${offset}`, fill: "none", stroke: "#f7f4e9", "stroke-width": 1.4, "stroke-linecap": "round" }));
   });
   svg.appendChild(g);
 }
 
 function drawBird(svg) {
-  const g = svgEl("g", { transform: "translate(40 58) rotate(-8)" });
-  g.appendChild(svgEl("path", { d: "M-18 12 C-14 -12 7 -25 20 -7 C10 -9 4 -2 0 11 C-5 4 -12 5 -18 12Z", fill: "#008445", stroke: "#06351d", "stroke-width": 2 }));
-  g.appendChild(svgEl("path", { d: "M-5 2 C-1 -10 12 -11 19 -2 C9 -1 5 6 2 15Z", fill: "#d8002b", opacity: 0.95 }));
-  g.appendChild(svgEl("path", { d: "M-15 12 C-20 22 -22 28 -26 32", fill: "none", stroke: "#008445", "stroke-width": 3, "stroke-linecap": "round" }));
-  g.appendChild(svgEl("path", { d: "M-3 15 C-1 26 1 31 4 36", fill: "none", stroke: "#d8002b", "stroke-width": 3, "stroke-linecap": "round" }));
-  g.appendChild(svgEl("circle", { cx: 11, cy: -8, r: 2.2, fill: "#071052" }));
-  g.appendChild(svgEl("path", { d: "M18 -8 L29 -12 L20 -3Z", fill: "#071052" }));
+  const g = svgEl("g", { transform: "translate(40 59) rotate(-12)" });
+  g.appendChild(svgEl("path", { d: "M-22 11 C-15 -14 7 -25 21 -8 C11 -8 6 -1 2 13 C-5 4 -13 5 -22 11Z", fill: "none", stroke: "#55a27d", "stroke-width": 3, "stroke-linejoin": "round" }));
+  g.appendChild(svgEl("path", { d: "M-6 1 C-2 -11 11 -12 20 -2 C10 -1 5 5 2 16", fill: "none", stroke: "#d36a70", "stroke-width": 3, "stroke-linecap": "round" }));
+  g.appendChild(svgEl("path", { d: "M-19 12 C-24 22 -26 28 -31 34 M-8 12 C-10 24 -14 30 -19 35 M-1 14 C1 25 4 31 8 36", fill: "none", stroke: "#55a27d", "stroke-width": 2.4, "stroke-linecap": "round" }));
+  g.appendChild(svgEl("circle", { cx: 11, cy: -8, r: 2.4, fill: "#53679a" }));
+  g.appendChild(svgEl("path", { d: "M18 -8 L29 -12 L20 -3Z", fill: "#53679a" }));
   svg.appendChild(g);
 }
 
 function drawWanTile(svg, rank) {
   svgText(svg, chineseRanks[rank - 1], {
     x: 40,
-    y: 46,
+    y: 43,
     "text-anchor": "middle",
     "font-family": "'Noto Sans TC', serif",
-    "font-size": 30,
+    "font-size": 34,
     "font-weight": 900,
-    fill: "#111111",
+    fill: "#53679a",
   });
   svgText(svg, "萬", {
     x: 40,
     y: 83,
     "text-anchor": "middle",
     "font-family": "'Noto Sans TC', serif",
-    "font-size": 32,
+    "font-size": 34,
     "font-weight": 900,
-    fill: "#d8002b",
+    fill: "#b94b4f",
   });
 }
 
 function drawHonorTile(svg, label) {
   if (label === "白") {
-    svg.appendChild(svgEl("rect", { x: 22, y: 27, width: 36, height: 56, rx: 2, fill: "none", stroke: "#111111", "stroke-width": 4 }));
-    svg.appendChild(svgEl("rect", { x: 29, y: 35, width: 22, height: 40, rx: 1, fill: "none", stroke: "#111111", "stroke-width": 2 }));
+    svg.appendChild(svgEl("rect", { x: 20, y: 28, width: 40, height: 56, rx: 1, fill: "none", stroke: "#53679a", "stroke-width": 4 }));
+    svg.appendChild(svgEl("rect", { x: 27, y: 35, width: 26, height: 42, rx: 1, fill: "none", stroke: "#53679a", "stroke-width": 2 }));
+    svg.appendChild(svgEl("path", { d: "M23 31 L34 31 M57 31 L46 31 M23 81 L34 81 M57 81 L46 81", fill: "none", stroke: "#53679a", "stroke-width": 2.2, "stroke-linecap": "round" }));
     return;
   }
-  const color = label === "中" ? "#d8002b" : label === "發" ? "#008445" : "#111111";
+  const color = label === "中" ? "#d36a70" : label === "發" ? "#55a27d" : "#53679a";
   svgText(svg, label, {
     x: 40,
     y: 72,
     "text-anchor": "middle",
     "font-family": "'Noto Sans TC', serif",
-    "font-size": 42,
+    "font-size": 48,
     "font-weight": 900,
     fill: color,
   });
 }
 
 function drawFlowerTile(svg, label) {
-  const flowerNumber = flowers.indexOf(label) + 1;
-  svgText(svg, String(flowerNumber), {
-    x: 14,
-    y: 22,
-    "text-anchor": "middle",
-    "font-family": "'Noto Sans TC', serif",
-    "font-size": 16,
-    "font-weight": 900,
-    fill: "#d8002b",
-  });
+  const isSeason = ["春", "夏", "秋", "冬"].includes(label);
+  const textColor = isSeason ? "#b94b4f" : "#2f6f91";
+  const flowerColor = isSeason ? "#dfcf58" : "#d96b8a";
+  svg.appendChild(svgEl("path", { d: "M40 64 C38 49 43 39 40 24", fill: "none", stroke: "#00945a", "stroke-width": 3, "stroke-linecap": "round" }));
+  svg.appendChild(svgEl("path", { d: "M39 45 C29 41 24 36 20 28 M41 48 C52 43 57 36 61 27", fill: "none", stroke: "#00945a", "stroke-width": 2.2, "stroke-linecap": "round" }));
+  [[20, 27], [60, 27], [40, 24]].forEach(([x, y], index) => drawFlowerBlossom(svg, x, y, flowerColor, index === 2 ? "#d96b8a" : flowerColor));
   svgText(svg, label, {
     x: 40,
-    y: 30,
+    y: 94,
     "text-anchor": "middle",
     "font-family": "'Noto Sans TC', serif",
-    "font-size": 21,
+    "font-size": 34,
     "font-weight": 900,
-    fill: "#111111",
+    fill: textColor,
   });
-  svg.appendChild(svgEl("path", { d: "M39 88 C36 68 43 55 37 39", fill: "none", stroke: "#008445", "stroke-width": 3.2, "stroke-linecap": "round" }));
-  svg.appendChild(svgEl("path", { d: "M38 63 C27 56 22 51 18 42", fill: "none", stroke: "#008445", "stroke-width": 2.4, "stroke-linecap": "round" }));
-  svg.appendChild(svgEl("path", { d: "M40 68 C51 62 57 54 61 45", fill: "none", stroke: "#008445", "stroke-width": 2.4, "stroke-linecap": "round" }));
-  [[18, 41], [61, 44], [37, 38]].forEach(([x, y]) => {
-    svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 5, fill: "#d8002b" }));
-    svg.appendChild(svgEl("circle", { cx: x + 5, cy: y + 2, r: 4, fill: "#e83a55" }));
-    svg.appendChild(svgEl("circle", { cx: x - 4, cy: y + 4, r: 4, fill: "#e83a55" }));
+}
+
+function drawFlowerBlossom(svg, x, y, fill, accent) {
+  const g = svgEl("g", { transform: `translate(${x} ${y})` });
+  [[0, -5], [5, 0], [0, 5], [-5, 0], [3.5, 3.5]].forEach(([dx, dy]) => {
+    g.appendChild(svgEl("circle", { cx: dx, cy: dy, r: 4, fill: accent }));
   });
+  g.appendChild(svgEl("circle", { cx: 0, cy: 0, r: 2.2, fill: "#fff4cf" }));
+  svg.appendChild(g);
 }
 
 function createLegacyTileFace(tile) {
@@ -2040,7 +2237,7 @@ function getTurnText() {
   if (!state.dealer) return "請先抽位起莊";
   if (state.currentPlayer !== "你") return `${state.currentPlayer} 思考中`;
   if (state.lastDrawSelf) return "請選一張牌打出，或使用跳出的胡 / 自摸提示";
-  if (state.lastDiscard) return "若條件成立，動作提示會在手牌上方跳出";
+  if (state.lastDiscard && hasPlayerResponseToDiscard()) return "若條件成立，動作提示會在手牌上方跳出";
   return "輪到你摸牌";
 }
 
@@ -2073,6 +2270,14 @@ document.getElementById("diceBox").addEventListener("click", drawSeatAndDealer);
 document.getElementById("drawBtn").addEventListener("click", drawTile);
 document.getElementById("discardBtn").addEventListener("click", discardTile);
 document.getElementById("newRoundBtn").addEventListener("click", startRound);
+voiceBtn.addEventListener("click", toggleVoice);
+musicBtn.addEventListener("click", toggleMusic);
+if ("speechSynthesis" in window) {
+  window.speechSynthesis.addEventListener("voiceschanged", () => {
+    mahjongAudio.speechVoice = null;
+    getTaiwaneseSpeechVoice();
+  });
+}
 aiSelect.addEventListener("change", (event) => setAiDifficulty(event.target.value));
 promptActionsEl.querySelectorAll("button").forEach((button) => {
   button.addEventListener("click", () => handlePromptAction(button.dataset.promptAction));

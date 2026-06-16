@@ -1462,6 +1462,16 @@ main {
   background: rgba(255, 255, 255, 0.09);
 }
 
+.table-toolbar .audio-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.13);
+}
+
+.table-toolbar .audio-toggle.active {
+  background: linear-gradient(180deg, #2ed39f, #117f69);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18), 0 0 18px rgba(46, 211, 159, 0.3);
+}
+
 .mahjong-stage {
   width: 100%;
 }
@@ -1665,6 +1675,73 @@ main {
 .opponent-right .tile-back {
   width: 18px;
   min-height: 0;
+}
+
+.player-melds {
+  position: absolute;
+  left: 22px;
+  bottom: 102px;
+  z-index: 3;
+  display: none;
+  max-width: min(46%, 360px);
+  gap: 7px;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.player-melds.has-melds {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.meld-group {
+  display: grid;
+  grid-template-columns: auto repeat(4, 28px);
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  background: rgba(10, 43, 32, 0.78);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+}
+
+.meld-label {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  background: rgba(255, 210, 91, 0.95);
+  color: #4a2600;
+  font-size: 13px;
+  font-weight: 900;
+  writing-mode: vertical-rl;
+}
+
+.meld-tile {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 39px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #fffdfa, #e8dfcf);
+  border-bottom: 3px solid #c2b48d;
+  overflow: hidden;
+  padding: 2px;
+}
+
+.meld-tile .tile-back {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.meld-tile .tile-face,
+.meld-tile .tile-art {
+  width: 100%;
+  height: 100%;
 }
 
 .discard-river {
@@ -2731,6 +2808,32 @@ main {
     gap: 4px;
     max-width: 340px;
     max-height: 150px;
+  }
+
+  .player-melds {
+    left: 10px;
+    bottom: 74px;
+    max-width: 56%;
+    gap: 4px;
+  }
+
+  .meld-group {
+    grid-template-columns: auto repeat(4, 22px);
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .meld-label {
+    min-width: 26px;
+    height: 29px;
+    font-size: 11px;
+  }
+
+  .meld-tile {
+    width: 22px;
+    height: 31px;
+    border-bottom-width: 2px;
+    padding: 1px;
   }
 
   .prompt-actions {
