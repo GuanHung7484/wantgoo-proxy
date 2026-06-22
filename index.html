@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=mole-boom-20260622a" />
+    <link rel="stylesheet" href="styles.css?v=mole-rabbit-groundhog-20260622a" />
   </head>
   <body>
     <div class="app-shell">
@@ -30,7 +30,7 @@
       <nav class="rail" aria-label="主要導覽">
         <button class="rail-btn active" data-view="lobby"><span>⌂</span>大廳</button>
         <button class="rail-btn" data-view="mahjong"><span>將</span>麻將</button>
-        <button class="rail-btn" data-view="mole"><span>槌</span>地鼠</button>
+        <button class="rail-btn" data-view="mole"><span>槌</span>土撥鼠</button>
         <button class="rail-btn" data-view="slot"><span>777</span>拉霸</button>
         <button class="rail-btn" data-view="store"><span>◆</span>儲值</button>
         <button class="rail-btn" data-view="rules"><span>?</span>規則</button>
@@ -69,8 +69,8 @@
             </article>
             <article class="game-card mole-card">
               <div class="card-badge">新遊戲</div>
-              <h2>打地鼠</h2>
-              <p>30 秒限時挑戰，打中地鼠得分，漏打與誤打會扣分。</p>
+              <h2>打土撥鼠</h2>
+              <p>30 秒限時挑戰，打中土撥鼠得分，兔子與地雷會扣分。</p>
               <button data-view="mole">開始敲擊</button>
             </article>
             <article class="game-card slot-card">
@@ -86,7 +86,7 @@
           <div class="mole-head">
             <div>
               <span class="eyebrow">Whack-a-Mole</span>
-              <h2>打地鼠挑戰</h2>
+              <h2>打土撥鼠挑戰</h2>
             </div>
             <div class="round-status">
               <span id="moleModeLabel">單人模式</span>
@@ -104,7 +104,7 @@
                 <button id="moleStartBtn" type="button">開始</button>
                 <button id="moleResetBtn" type="button">重置</button>
               </div>
-              <div class="mole-board" id="moleBoard" aria-label="打地鼠洞口">
+              <div class="mole-board" id="moleBoard" aria-label="打土撥鼠洞口">
                 <button class="mole-hole" data-index="0" type="button" aria-label="洞口 1"><span class="mole-rim"></span><span class="mole-character"></span></button>
                 <button class="mole-hole" data-index="1" type="button" aria-label="洞口 2"><span class="mole-rim"></span><span class="mole-character"></span></button>
                 <button class="mole-hole" data-index="2" type="button" aria-label="洞口 3"><span class="mole-rim"></span><span class="mole-character"></span></button>
@@ -346,6 +346,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=mole-boom-20260622a"></script>
+    <script src="app.js?v=mole-rabbit-groundhog-20260622a"></script>
   </body>
 </html>

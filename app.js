@@ -148,9 +148,9 @@ const moleState = {
   nextSpawnId: 1,
 };
 const moleCharacters = [
-  { type: "mole", label: "地鼠", score: 5, miss: -1, className: "mole-good" },
-  { type: "gold", label: "金地鼠", score: 10, miss: 0, className: "mole-gold" },
-  { type: "rat", label: "老鼠", score: -3, miss: 0, className: "mole-bad" },
+  { type: "mole", label: "土撥鼠", score: 10, miss: -1, className: "mole-good" },
+  { type: "gold", label: "金土撥鼠", score: 10, miss: 0, className: "mole-gold" },
+  { type: "rabbit", label: "兔子", score: -10, miss: 0, className: "mole-rabbit" },
   { type: "mine", label: "地雷", score: -30, miss: 0, className: "mole-bomb" },
 ];
 const moleHammerMarkup = '<span class="mole-hammer-head"></span><span class="mole-hammer-handle"></span>';
@@ -603,15 +603,15 @@ function moleFace(type) {
 
 function pickMoleCharacter() {
   const roll = Math.random();
-  if (roll < 0.64) return moleCharacters[0];
-  if (roll < 0.76) return moleCharacters[1];
-  if (roll < 0.9) return moleCharacters[2];
+  if (roll < 0.5) return moleCharacters[0];
+  if (roll < 0.6) return moleCharacters[1];
+  if (roll < 0.78) return moleCharacters[2];
   return moleCharacters[3];
 }
 
 function moleFaceMarkup(type) {
   if (type === "mine") return '<span class="mole-face mole-face-mine"><span></span></span>';
-  if (type === "rat") return '<span class="mole-face mole-face-rat"><span></span></span>';
+  if (type === "rabbit") return '<span class="mole-face mole-face-rabbit"><span></span></span>';
   return '<span class="mole-face mole-face-mole"><span></span></span>';
 }
 
@@ -818,6 +818,8 @@ function hitMole(hole) {
     const effectMarkup =
       character.type === "mine"
         ? '<span class="mole-explosion" aria-hidden="true"><span></span><span></span><span></span><span></span></span>'
+        : character.type === "rabbit"
+          ? '<span class="mole-cry" aria-hidden="true"><span></span><span></span><span></span></span>'
         : character.score > 0
           ? '<span class="mole-hit-burst" aria-hidden="true"></span><span class="mole-stars" aria-hidden="true"><span>&#9733;</span><span>&#9733;</span></span>'
           : '<span class="mole-smoke" aria-hidden="true"><span></span><span></span><span></span></span>';
