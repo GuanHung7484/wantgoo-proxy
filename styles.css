@@ -647,6 +647,76 @@ main {
   height: 14%;
 }
 
+.mole-hole.rabbit-hit .mole-hit-face {
+  bottom: 25px;
+  animation: rabbit-sob 0.42s ease-out;
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit {
+  width: clamp(70px, 10vw, 92px);
+  height: clamp(62px, 9vw, 82px);
+  border-radius: 48% 48% 44% 44%;
+  background:
+    radial-gradient(ellipse at 25% 66%, rgba(77, 184, 238, 0.3) 0 8%, transparent 9%),
+    radial-gradient(ellipse at 75% 66%, rgba(77, 184, 238, 0.3) 0 8%, transparent 9%),
+    linear-gradient(180deg, #fff9ed, #f2dacb);
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit::before,
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit::after {
+  top: -58%;
+  width: 25%;
+  height: 78%;
+  background: linear-gradient(180deg, #fffaf1 0 12%, #ff7f98 14% 56%, #f2d6c7 58% 100%);
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit span {
+  top: 63%;
+  width: 18%;
+  height: 8%;
+  border: 2px solid #8a4c3a;
+  border-top: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-radius: 0 0 999px 999px;
+  background: transparent;
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit span::before,
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit span::after {
+  top: -220%;
+  width: 18px;
+  height: 24px;
+  border-radius: 50% 50% 54% 54%;
+  background:
+    radial-gradient(circle at 35% 26%, #ffffff 0 17%, transparent 18%),
+    radial-gradient(circle at 62% 62%, #78dbff 0 10%, transparent 11%),
+    linear-gradient(180deg, #2aaef0, #168bd4);
+  box-shadow:
+    0 0 0 2px rgba(50, 142, 195, 0.28),
+    0 9px 0 1px rgba(56, 183, 239, 0.72),
+    0 18px 0 2px rgba(56, 183, 239, 0.48);
+  animation: rabbit-watery-eyes 0.6s ease-in-out infinite alternate;
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit span::before {
+  left: -138%;
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit span::after {
+  right: -138%;
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit {
+  box-shadow:
+    inset 0 5px 0 rgba(255, 255, 255, 0.34),
+    0 7px 4px rgba(0, 0, 0, 0.18);
+}
+
+.mole-hole.rabbit-hit .mole-hit-face .mole-face-rabbit > span {
+  filter: drop-shadow(-18px -22px 0 #8a4c3a) drop-shadow(18px -22px 0 #8a4c3a);
+}
+
 .mole-face-mine {
   width: clamp(44px, 7vw, 60px);
   height: clamp(44px, 7vw, 60px);
@@ -812,10 +882,10 @@ main {
 .mole-cry {
   position: absolute;
   left: 50%;
-  bottom: 54%;
+  bottom: 43%;
   z-index: 7;
-  width: clamp(74px, 12vw, 104px);
-  height: clamp(66px, 10vw, 88px);
+  width: clamp(88px, 14vw, 124px);
+  height: clamp(78px, 12vw, 104px);
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -830,20 +900,20 @@ main {
 
 .mole-cry span:nth-child(1),
 .mole-cry span:nth-child(2) {
-  top: 18%;
-  width: 10px;
-  height: 18px;
-  border-radius: 60% 60% 60% 0;
+  top: 22%;
+  width: 15px;
+  height: 36px;
+  border-radius: 999px 999px 70% 70%;
 }
 
 .mole-cry span:nth-child(1) {
-  left: 25%;
-  transform: rotate(-32deg);
+  left: 19%;
+  transform: rotate(4deg);
 }
 
 .mole-cry span:nth-child(2) {
-  right: 25%;
-  transform: rotate(-58deg);
+  right: 19%;
+  transform: rotate(-4deg);
   animation-delay: 0.06s;
 }
 
@@ -1136,6 +1206,29 @@ main {
   100% {
     opacity: 0.28;
     transform: translateX(-50%) scaleX(1.26);
+  }
+}
+
+@keyframes rabbit-sob {
+  0% {
+    transform: translate(-50%, -2px) scale(1.04) rotate(-2deg);
+  }
+  46% {
+    transform: translate(-50%, 5px) scale(0.97) rotate(2deg);
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1) rotate(0);
+  }
+}
+
+@keyframes rabbit-watery-eyes {
+  from {
+    filter: brightness(1);
+    transform: translateY(0) scaleY(1);
+  }
+  to {
+    filter: brightness(1.15);
+    transform: translateY(1px) scaleY(1.08);
   }
 }
 

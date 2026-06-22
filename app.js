@@ -807,7 +807,7 @@ function hitMole(hole) {
   }
   moleState.active.delete(index);
   if (hole) {
-    hole.className = `mole-hole hit${character.type === "mine" ? " mine-hit" : ""}`;
+    hole.className = `mole-hole hit${character.type === "mine" ? " mine-hit" : ""}${character.type === "rabbit" ? " rabbit-hit" : ""}`;
     delete hole.dataset.character;
     delete hole.dataset.score;
     delete hole.dataset.miss;
