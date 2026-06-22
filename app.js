@@ -151,7 +151,7 @@ const moleCharacters = [
   { type: "mole", label: "地鼠", score: 5, miss: -1, className: "mole-good" },
   { type: "gold", label: "金地鼠", score: 10, miss: 0, className: "mole-gold" },
   { type: "rat", label: "老鼠", score: -3, miss: 0, className: "mole-bad" },
-  { type: "mine", label: "地雷", score: -5, miss: 0, className: "mole-bomb" },
+  { type: "mine", label: "地雷", score: -30, miss: 0, className: "mole-bomb" },
 ];
 const moleHammerMarkup = '<span class="mole-hammer-head"></span><span class="mole-hammer-handle"></span>';
 
@@ -777,6 +777,26 @@ function getMoleHitTarget(event) {
   return null;
 }
 
+function playMoleBoomSound() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+  const context = new AudioContext();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const time = context.currentTime;
+  oscillator.type = "sawtooth";
+  oscillator.frequency.setValueAtTime(120, time);
+  oscillator.frequency.exponentialRampToValueAtTime(42, time + 0.18);
+  gain.gain.setValueAtTime(0.001, time);
+  gain.gain.exponentialRampToValueAtTime(0.22, time + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.24);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(time);
+  oscillator.stop(time + 0.25);
+  oscillator.onended = () => context.close();
+}
+
 function hitMole(hole) {
   if (!moleState.running) return;
   const index = Number(hole.dataset.index);
@@ -787,7 +807,7 @@ function hitMole(hole) {
   }
   moleState.active.delete(index);
   if (hole) {
-    hole.className = "mole-hole hit";
+    hole.className = `mole-hole hit${character.type === "mine" ? " mine-hit" : ""}`;
     delete hole.dataset.character;
     delete hole.dataset.score;
     delete hole.dataset.miss;
@@ -796,10 +816,14 @@ function hitMole(hole) {
     hole.onmousedown = null;
     hole.ontouchstart = null;
     const effectMarkup =
-      character.score > 0
-        ? '<span class="mole-stars" aria-hidden="true"><span>&#9733;</span><span>&#9733;</span><span>&#9733;</span></span>'
-        : '<span class="mole-smoke" aria-hidden="true"><span></span><span></span><span></span></span>';
-    hole.innerHTML = `<span class="mole-rim"></span><span class="mole-hit-face">${moleFaceMarkup(character.type)}</span>${effectMarkup}<span class="mole-hammer" aria-hidden="true">${moleHammerMarkup}</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
+      character.type === "mine"
+        ? '<span class="mole-explosion" aria-hidden="true"><span></span><span></span><span></span><span></span></span>'
+        : character.score > 0
+          ? '<span class="mole-hit-burst" aria-hidden="true"></span><span class="mole-stars" aria-hidden="true"><span>&#9733;</span><span>&#9733;</span></span>'
+          : '<span class="mole-smoke" aria-hidden="true"><span></span><span></span><span></span></span>';
+    const hitFaceMarkup = character.type === "mine" ? "" : `<span class="mole-hit-face">${moleFaceMarkup(character.type)}</span>`;
+    if (character.type === "mine") playMoleBoomSound();
+    hole.innerHTML = `<span class="mole-rim"></span>${hitFaceMarkup}${effectMarkup}<span class="mole-hammer" aria-hidden="true">${moleHammerMarkup}</span><span class="mole-hit-score">${character.score > 0 ? `+${character.score}` : character.score}</span>`;
     setTimeout(() => {
       if (!moleState.active.has(index)) {
         hole.className = "mole-hole";
