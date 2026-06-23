@@ -206,9 +206,11 @@ main {
 
 .hero h1 {
   margin: 8px 0 10px;
-  font-size: clamp(42px, 8vw, 96px);
+  max-width: 100%;
+  font-size: clamp(38px, 5.2vw, 76px);
   line-height: 0.98;
   letter-spacing: 0;
+  white-space: nowrap;
   text-shadow: 0 0 24px rgba(255, 53, 207, 0.65), 0 4px 0 #5f0c77;
 }
 
@@ -3324,7 +3326,7 @@ main {
   }
 
   .hero h1 {
-    font-size: 48px;
+    font-size: clamp(32px, 11vw, 46px);
   }
 
   .hero p {
