@@ -148,8 +148,8 @@ const moleState = {
   nextSpawnId: 1,
 };
 const moleCharacters = [
-  { type: "mole", label: "土撥鼠", score: 10, miss: -1, className: "mole-good" },
-  { type: "gold", label: "金土撥鼠", score: 10, miss: 0, className: "mole-gold" },
+  { type: "mole", label: "地鼠", score: 10, miss: -1, className: "mole-good" },
+  { type: "gold", label: "金地鼠", score: 10, miss: 0, className: "mole-gold" },
   { type: "rabbit", label: "兔子", score: -10, miss: 0, className: "mole-rabbit" },
   { type: "mine", label: "地雷", score: -30, miss: 0, className: "mole-bomb" },
 ];
