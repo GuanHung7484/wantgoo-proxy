@@ -294,6 +294,12 @@ main {
     linear-gradient(145deg, rgba(0, 112, 156, 0.9), rgba(1, 29, 70, 0.96));
 }
 
+.farm-card {
+  background:
+    radial-gradient(circle at 80% 12%, rgba(255, 221, 88, 0.46), transparent 27%),
+    linear-gradient(145deg, rgba(69, 164, 58, 0.88), rgba(27, 73, 30, 0.95));
+}
+
 .game-link {
   display: inline-grid;
   place-items: center;
@@ -3146,7 +3152,10 @@ main {
 
   .lobby-view .mole-card {
     order: 5;
-    grid-column: 1 / -1;
+  }
+
+  .lobby-view .farm-card {
+    order: 6;
   }
 
   .lobby-view .game-card {

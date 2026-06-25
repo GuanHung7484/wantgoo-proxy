@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>開心小農場｜遊戲室 Online</title>
+<style>
+:root{--gold:#ffd45a;--green:#5ee56d;--soil:#6d3f1f;--panel:#1b3b25e8;--line:#ffffff3a;--text:#fffdf4}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;overflow:hidden;background:#183b1f;color:var(--text);font-family:"Microsoft JhengHei",system-ui,sans-serif;user-select:none}button,select{font:inherit}button{cursor:pointer;color:inherit}.game{position:relative;width:100%;height:100%;min-height:560px;overflow:hidden;background:url("assets/crazy-farm-bg.png") 57% center/cover no-repeat}.game::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0001,#00000030);pointer-events:none}.top{position:absolute;z-index:6;inset:0 0 auto;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;background:linear-gradient(#173d23f2,#173d2300);pointer-events:none}.back,.chip,.tool-btn,.shop button,.modal button,.hotspot,.bag-btn{border:1px solid var(--line);border-radius:10px;background:#214d2ddb;color:#fff;text-decoration:none;font-weight:900}.back{pointer-events:auto;padding:8px 10px}.title{text-align:center;text-shadow:0 3px #0a471c}.title b{display:block;font-size:clamp(21px,3vw,34px);font-style:italic}.title small{color:var(--gold);letter-spacing:3px}.stats{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}.chip{padding:7px 10px;background:#17361fdc}.chip b{color:var(--gold)}.left-panel,.right-panel,.bottom-panel{position:absolute;z-index:5;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 10px 28px #0008}.left-panel{left:10px;top:78px;width:230px;padding:10px}.right-panel{right:10px;top:78px;width:250px;padding:10px}.bottom-panel{left:50%;bottom:14px;transform:translateX(-50%);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(780px,94vw);padding:9px}.field{position:absolute;z-index:2;left:43%;top:52%;transform:translate(-50%,-50%);display:grid;grid-template-columns:repeat(5,78px);grid-auto-rows:72px;gap:3px}.plot{position:relative;width:78px;height:72px;border:1px solid transparent;border-radius:12px;background:transparent;transition:.12s}.plot:active,.plot:hover{background:#fff4;outline:2px solid #fff36a}.plot.ready{filter:drop-shadow(0 0 12px #ffe96e)}.plot.rainbow::after{content:"";position:absolute;inset:11px;border-radius:999px;background:conic-gradient(#ff4b4b,#ffd84b,#5dff6f,#5cecff,#9a6bff,#ff4bcb,#ff4b4b);opacity:.46;z-index:-1;filter:blur(8px)}.sprout{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);font-size:36px;text-shadow:0 4px #153814}.meter{position:absolute;left:15px;right:15px;bottom:7px;height:6px;border-radius:99px;background:#0008;overflow:hidden}.meter i{display:block;height:100%;background:linear-gradient(90deg,#88ff6a,#fff06a)}.hotspot{position:absolute;z-index:4;display:grid;place-items:center;min-width:64px;min-height:42px;padding:0 10px;background:#214d2daa;box-shadow:0 0 18px #ffe66a55}.house-hotspot{right:22%;top:26%}.merchant-hotspot{right:13%;top:50%;width:92px;height:72px;background:linear-gradient(#f4c45b,#9b5820);color:#3b2107}.merchant-hotspot::before{content:"商店";position:absolute;top:-22px;left:8px;right:8px;padding:2px;border-radius:6px;background:#fff0a8;color:#5c3300}.merchant-hotspot::after{content:"👨‍🌾";position:absolute;right:-13px;bottom:-9px;font-size:30px}.bag-btn{padding:6px 10px}.tool-btn{min-height:48px;background:linear-gradient(#55c950,#1d7a2e)}.tool-btn.active{outline:3px solid var(--gold)}.seed-list,.shop-list,.inventory{display:grid;gap:7px}.seed-list{grid-template-columns:repeat(2,1fr);max-height:238px;overflow:auto}.seed{min-height:44px;border:1px solid #ffffff2b;border-radius:9px;background:#2f6336;padding:5px;text-align:left;color:#fff}.seed.active{outline:3px solid var(--gold)}.seed b,.seed small{display:block}.seed small{font-size:11px;color:#d5f3c8}.panel-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.panel-title h2{margin:0;color:var(--gold);font-size:17px}.market{display:grid;gap:7px;max-height:180px;overflow:auto}.market-row{display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:8px;background:#ffffff13;font-size:13px}.market-row strong{color:#ffe66c}.shop,.bag{display:none;position:absolute;z-index:12;inset:68px 10px 82px;border:1px solid #9fff93;border-radius:18px;background:#143320f4;box-shadow:0 20px 70px #000c;padding:14px;overflow:auto}.shop.open,.bag.open{display:grid;grid-template-rows:auto auto 1fr;gap:10px}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tabs button,.shop button{min-height:38px;padding:0 12px}.tabs button.active{background:linear-gradient(#ffe36d,#df8a1f);color:#422600}.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.shop-card{padding:10px;border:1px solid #ffffff2a;border-radius:12px;background:#25502ddc}.shop-card h3{margin:0 0 5px;color:#fff}.shop-card p{min-height:42px;margin:0 0 8px;color:#d7efce;font-size:13px;line-height:1.4}.log{position:absolute;z-index:6;left:10px;bottom:92px;width:min(430px,66vw);max-height:92px;margin:0;padding:8px 10px 8px 30px;border:1px solid var(--line);border-radius:12px;background:#17361fdc;overflow:auto;font-size:13px}.modal{position:absolute;z-index:20;inset:0;display:grid;place-items:center;padding:18px;background:#061707c9;backdrop-filter:blur(6px)}.modal.hidden{display:none}.card{width:min(620px,94vw);padding:22px;border:2px solid #98ff85;border-radius:18px;background:linear-gradient(145deg,#245f2b,#102a1c);text-align:center;box-shadow:0 25px 80px #000c}.card h1{margin:6px;font-size:clamp(34px,7vw,64px);text-shadow:0 4px #0c471e}.card p{color:#dff4d6;line-height:1.65}.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.rules div{padding:9px;border-radius:10px;background:#ffffff15;font-size:13px}.card button{width:100%;min-height:50px;background:linear-gradient(#ffe45c,#ff9b16);color:#472900;font-size:18px}.room{display:none;position:absolute;z-index:18;inset:0;background:#080706}.room.open{display:block}.room-bg{position:absolute;inset:0;background:url("assets/crazy-farm-room.png") center/cover no-repeat}.room::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center,#0000,#0005)}.room-ui{position:absolute;z-index:2;left:12px;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;border:1px solid var(--line);border-radius:14px;background:#1b271de8}.room-ui button{min-height:42px;border:1px solid #fff5;border-radius:10px;background:#5c3d22;color:#fff;font-weight:900}.close-room{position:absolute;z-index:3;top:12px;left:12px}.decor{position:absolute;z-index:2;font-size:42px;filter:drop-shadow(0 5px 5px #0008)}.decor.table{left:47%;top:58%}.decor.bed{left:54%;top:41%}.decor.plant{left:69%;top:52%}.decor.cabinet{left:32%;top:47%}@media(max-width:760px){.game{background-position:62% center}.top{grid-template-columns:auto 1fr}.stats{grid-column:1/-1;justify-content:center}.chip{padding:4px 7px;font-size:12px}.left-panel{top:auto;left:8px;right:8px;bottom:82px;width:auto;max-height:168px;overflow:auto}.right-panel{display:none}.bottom-panel{bottom:8px;grid-template-columns:repeat(4,1fr);gap:6px}.tool-btn{min-height:42px;font-size:13px}.field{left:39%;top:48%;grid-template-columns:repeat(4,82px);grid-auto-rows:76px;gap:1px}.plot{width:82px;height:76px}.sprout{font-size:34px}.seed-list{grid-template-columns:repeat(3,1fr);max-height:none}.seed{min-height:38px}.seed small{display:none}.log{display:none}.shop,.bag{inset:62px 8px 72px}.rules{grid-template-columns:1fr}.title small{display:none}.house-hotspot{right:7%;top:16%}.merchant-hotspot{right:4%;top:39%;min-width:78px}.room-ui{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main class="game">
+  <header class="top">
+    <a class="back" href="index.html">← 返回大廳</a>
+    <div class="title"><b>開心小農場</b><small>HAPPY FARM</small></div>
+    <div class="stats">
+      <span class="chip">金幣 <b id="coins">10000</b></span>
+      <span class="chip">體力 <b id="energy">120</b></span>
+      <span class="chip"><b id="month">春 1 月</b></span>
+      <span class="chip">工具 <b id="toolLevel">1</b></span>
+    </div>
+  </header>
+  <section class="left-panel">
+    <div class="panel-title"><h2>種子</h2><button class="bag-btn" id="bagBtn" type="button">道具欄</button><button class="back" id="shopBtn" type="button">商店</button></div>
+    <div class="seed-list" id="seedList"></div>
+  </section>
+  <aside class="right-panel">
+    <div class="panel-title"><h2>市場行情</h2><span id="demandHint">供需變動中</span></div>
+    <div class="market" id="market"></div>
+    <div class="panel-title" style="margin-top:10px"><h2>庫存</h2><button class="back" id="sellAllBtn" type="button">賣出</button></div>
+    <div class="inventory" id="inventory"></div>
+  </aside>
+  <div class="field" id="field" aria-label="農田"></div>
+  <button class="hotspot house-hotspot" id="houseBtn" type="button">房子</button>
+  <button class="hotspot merchant-hotspot" id="merchantBtn" type="button">攤販</button>
+  <div class="bottom-panel">
+    <button class="tool-btn active" data-tool="seed" type="button">播種</button>
+    <button class="tool-btn" data-tool="water" type="button">澆水</button>
+    <button class="tool-btn" data-tool="weed" type="button">除草</button>
+    <button class="tool-btn" data-tool="fertilize" type="button">施肥</button>
+  </div>
+  <ol class="log" id="log"></ol>
+  <section class="shop" id="shop">
+    <div class="panel-title"><h2>商人商店</h2><button class="back" id="closeShop" type="button">關閉</button></div>
+    <div class="tabs"><button class="active" data-shop="seeds" type="button">種子</button><button data-shop="tools" type="button">工具</button><button data-shop="furniture" type="button">家具</button><button data-shop="materials" type="button">肥料</button></div>
+    <div class="shop-grid" id="shopGrid"></div>
+  </section>
+  <section class="bag" id="bag">
+    <div class="panel-title"><h2>道具欄</h2><button class="back" id="closeBag" type="button">關閉</button></div>
+    <div class="tabs"><button class="active" type="button">種子 / 作物 / 家具</button></div>
+    <div class="shop-grid" id="bagGrid"></div>
+  </section>
+  <section class="room" id="room" aria-label="房間佈置">
+    <div class="room-bg"></div>
+    <button class="back close-room" id="closeRoom" type="button">← 回農場</button>
+    <div id="decorLayer"></div>
+    <div class="room-ui">
+      <button data-decor="table" type="button">擺木桌</button>
+      <button data-decor="bed" type="button">擺床鋪</button>
+      <button data-decor="plant" type="button">擺盆栽</button>
+      <button data-decor="cabinet" type="button">擺收納櫃</button>
+    </div>
+  </section>
+  <section class="modal" id="intro">
+    <div class="card">
+      <div class="panel-title"><h2>農場新手任務</h2></div>
+      <h1>開心小農場</h1>
+      <p>你一開始只有 10,000 金幣。先去商店買種子，播種時會扣種子數量，不會再扣金幣。作物成熟後點擊收割，再找商人賣出。</p>
+      <div class="rules"><div>季節合適<br><b>品質更穩</b></div><div>少人種植<br><b>價格更高</b></div><div>升級工具<br><b>成長加速</b></div></div>
+      <button id="startBtn" type="button">開始經營</button>
+    </div>
+  </section>
+</main>
+<script>
+(()=>{"use strict";
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const crops=[
+["高麗菜","leaf","🥬",18,28,["春","秋"]],["青江菜","leaf","🥬",14,22,["春","冬"]],["菠菜","leaf","🌿",16,24,["春","秋","冬"]],
+["防風草","root","🥕",22,38,["春"]],["馬鈴薯","root","🥔",20,32,["春","秋"]],["紅蘿蔔","root","🥕",18,30,["春","秋"]],["大蒜","root","🧄",24,40,["秋","冬"]],["白蘿蔔","root","🌱",18,28,["冬"]],["洋蔥","root","🧅",20,34,["春","秋"]],
+["番茄","fruit","🍅",28,52,["夏"]],["小黃瓜","fruit","🥒",24,42,["夏"]],["青豆","fruit","🫛",20,36,["春","夏"]],["南瓜","fruit","🎃",42,92,["秋"]],
+["草莓","berry","🍓",32,68,["春"]],["藍莓","berry","🫐",36,78,["夏"]],["西瓜","berry","🍉",48,110,["夏"]],["甜瓜","berry","🍈",44,96,["夏"]],
+["蘋果","tree","🍎",56,130,["秋"]],["櫻桃","tree","🍒",52,118,["春"]],["橘子","tree","🍊",50,112,["冬"]],["檸檬","tree","🍋",46,104,["夏","冬"]],["桃子","tree","🍑",58,136,["夏"]],["芒果","tree","🥭",60,148,["夏"]],
+["玉米","cash","🌽",30,58,["夏","秋"]],["小麥","cash","🌾",22,36,["春","秋"]],["咖啡豆","drink","☕",54,140,["春","夏"]],["茶葉","drink","🍵",40,86,["春","秋"]],["葡萄","drink","🍇",46,120,["秋"]]
+].map(([name,type,icon,grow,price,seasons],id)=>({id,name,type,icon,grow,price,seasons,seed:Math.max(8,Math.round(price*.38))}));
+const months=["春 1 月","春 2 月","春 3 月","夏 4 月","夏 5 月","夏 6 月","秋 7 月","秋 8 月","秋 9 月","冬 10 月","冬 11 月","冬 12 月"],seasons=["春","春","春","夏","夏","夏","秋","秋","秋","冬","冬","冬"];
+const state={coins:10000,energy:120,month:0,tool:"seed",seed:0,toolLevel:1,shop:"seeds",plots:[],bag:{},seeds:{},furniture:0,decor:{},prices:{}};
+for(let i=0;i<30;i++)state.plots.push({crop:null,progress:0,health:0,water:false,weed:false,rainbow:Math.random()<.1});
+function season(){return seasons[state.month%12]}
+function price(c){return Math.round(c.price*(state.prices[c.id]||1)*(c.seasons.includes(season())?1:.55))}
+function tick(){state.month=(state.month+1)%12;state.energy=Math.min(120,state.energy+18);crops.forEach(c=>state.prices[c.id]=+(0.65+Math.random()*0.85).toFixed(2));state.plots.forEach(p=>{if(!p.crop)return;let speed=(p.water?1.6:.55)+(p.weed?-0.45:.15)+p.health/130+state.toolLevel*.12;p.progress=Math.min(100,p.progress+speed*11);p.health=Math.max(0,Math.min(100,p.health+(p.water?12:-4)+(p.weed?-9:0)));p.water=false;if(Math.random()<.2)p.weed=true});log(`月份來到 ${months[state.month]}，市場價格重新波動。`);render()}
+function spend(v){if(state.coins<v){log("金幣不足。");return false}state.coins-=v;return true}
+function useEnergy(v){if(state.energy<v){log("體力不足，等下個月份恢復。");return false}state.energy-=v;return true}
+function plant(i){let c=crops[state.seed],p=state.plots[i];if(p.crop)return log("這格已經有作物。");if((state.seeds[c.name]||0)<=0)return log(`沒有 ${c.name} 種子，請先找商人購買。`);if(!useEnergy(3))return;state.seeds[c.name]-=1;p.crop=c.id;p.progress=5;p.health=c.seasons.includes(season())?45:20;p.water=false;p.weed=Math.random()<.18;p.rainbow=p.rainbow||Math.random()<.08;log(`播種 ${c.name}${p.rainbow?"，田地出現彩虹氣息。":"。"}`);render()}
+function harvest(i){let p=state.plots[i],c=crops[p.crop];if(!c||p.progress<100)return false;let special=p.health>=100&&p.rainbow&&Math.random()<.55,mutate=p.health>=92&&Math.random()<.2,qty=1+(special?1:0);state.bag[c.name]=(state.bag[c.name]||0)+qty;let label=special?"特級":mutate?"變異":"";log(`收成 ${label}${c.name} x${qty}。`);Object.assign(p,{crop:null,progress:0,health:0,water:false,weed:false,rainbow:Math.random()<.08});render();return true}
+function action(i){let p=state.plots[i];if(harvest(i))return;if(state.tool==="seed")return plant(i);if(!p.crop)return log("空地要先播種。");if(state.tool==="water"&&useEnergy(2)){p.water=true;p.health=Math.min(100,p.health+8);log("澆水完成。")}if(state.tool==="weed"&&useEnergy(2)){p.weed=false;p.health=Math.min(100,p.health+10);log("雜草清掉了。")}if(state.tool==="fertilize"&&useEnergy(4)){p.health=Math.min(100,p.health+24);p.progress=Math.min(100,p.progress+state.toolLevel*6);log("施肥完成，成長加速。")}render()}
+function sellAll(){let total=0;Object.entries(state.bag).forEach(([name,n])=>{let c=crops.find(x=>x.name===name);total+=price(c)*n;delete state.bag[name]});state.coins+=total;log(total?`商人收購作物，收入 ${total} 金幣。`:"庫存是空的。");render()}
+function buySeed(c){if(spend(c.seed)){state.seeds[c.name]=(state.seeds[c.name]||0)+1;state.seed=c.id;log(`買入 ${c.name} 種子 x1。`);render()}}
+function buyTool(){let cost=180*state.toolLevel;if(state.toolLevel>=5)return log("工具已經滿級。");if(spend(cost)){state.toolLevel++;log(`工具升級到 ${state.toolLevel} 級，收成時間加速。`);render()}}
+function buyFurniture(name,cost){let key={"木桌":"table","床鋪":"bed","盆栽":"plant","收納櫃":"cabinet"}[name]||"table";if(spend(cost)){state.furniture++;state.decor[key]=true;log(`買了${name}，可以進房子佈置。`);render()}}
+function renderField(){let f=$("#field");f.innerHTML="";state.plots.forEach((p,i)=>{let c=crops[p.crop],b=document.createElement("button");b.className=`plot ${p.rainbow?"rainbow":""} ${p.progress>=100?"ready":""}`;b.type="button";b.onclick=()=>action(i);b.innerHTML=`${c?`<span class="sprout">${p.progress>=100?c.icon:p.progress>50?"🌿":"🌱"}</span><span class="meter"><i style="width:${p.progress}%"></i></span>`:""}`;f.appendChild(b)})}
+function renderSeeds(){let box=$("#seedList");box.innerHTML=crops.map(c=>`<button class="seed ${state.seed===c.id?"active":""}" data-seed="${c.id}" type="button"><b>${c.icon} ${c.name}</b><small>庫存 ${state.seeds[c.name]||0}・${c.seasons.join("/")}</small></button>`).join("");box.querySelectorAll("[data-seed]").forEach(b=>{b.onclick=()=>{state.seed=Number(b.dataset.seed);renderSeeds()}})}
+function renderMarket(){let list=[...crops].sort((a,b)=>price(b)-price(a)).slice(0,9);$("#market").innerHTML=list.map(c=>`<div class="market-row"><span>${c.icon} ${c.name}</span><strong>${price(c)}</strong></div>`).join("");let inv=Object.entries(state.bag);$("#inventory").innerHTML=inv.length?inv.map(([n,q])=>`<div class="market-row"><span>${n}</span><strong>x${q}</strong></div>`).join(""):"<div class='market-row'><span>尚無作物</span><strong>0</strong></div>"}
+function renderShop(){let grid=$("#shopGrid");if(state.shop==="seeds")grid.innerHTML=crops.map(c=>`<article class="shop-card"><h3>${c.icon} ${c.name}種子</h3><p>${c.seasons.join("、")}適種；目前庫存 ${state.seeds[c.name]||0}。</p><button data-buy-seed="${c.id}">購買 ${c.seed}</button></article>`).join("");if(state.shop==="tools")grid.innerHTML=`<article class="shop-card"><h3>工具升級</h3><p>目前 ${state.toolLevel} 級。等級越高，施肥與自然成長越快。</p><button id="buyTool">升級 ${180*state.toolLevel}</button></article>`;if(state.shop==="furniture")grid.innerHTML=[["木桌",80],["床鋪",130],["盆栽",60],["收納櫃",160]].map(x=>`<article class="shop-card"><h3>${x[0]}</h3><p>佈置家裡，累積舒適度與收藏。</p><button data-furniture="${x[0]}" data-cost="${x[1]}">購買 ${x[1]}</button></article>`).join("");if(state.shop==="materials")grid.innerHTML=`<article class="shop-card"><h3>營養肥料</h3><p>立即恢復體力 25，方便連續照顧作物。</p><button id="buyEnergy">購買 70</button></article>`;grid.querySelectorAll("[data-buy-seed]").forEach(b=>b.onclick=()=>buySeed(crops[Number(b.dataset.buySeed)]));$("#buyTool")?.addEventListener("click",buyTool);grid.querySelectorAll("[data-furniture]").forEach(b=>b.onclick=()=>buyFurniture(b.dataset.furniture,Number(b.dataset.cost)));$("#buyEnergy")?.addEventListener("click",()=>{if(spend(70)){state.energy=Math.min(120,state.energy+25);log("使用營養劑，體力恢復。");render()}})}
+function renderBag(){let items=[];Object.entries(state.seeds).forEach(([n,q])=>q>0&&items.push(`<article class="shop-card"><h3>種子：${n}</h3><p>播種會消耗 1 顆。</p><strong>x${q}</strong></article>`));Object.entries(state.bag).forEach(([n,q])=>q>0&&items.push(`<article class="shop-card"><h3>作物：${n}</h3><p>可找商人賣出。</p><strong>x${q}</strong></article>`));Object.keys(state.decor).forEach(k=>items.push(`<article class="shop-card"><h3>家具</h3><p>${k}</p><strong>已擁有</strong></article>`));$("#bagGrid").innerHTML=items.length?items.join(""):"<article class='shop-card'><h3>空空的</h3><p>先去商人商店購買種子。</p></article>"}
+function renderDecor(){let icons={table:"🪵",bed:"🛏️",plant:"🪴",cabinet:"🗄️"},layer=$("#decorLayer");layer.innerHTML=Object.keys(state.decor).map(k=>`<span class="decor ${k}">${icons[k]||"🪑"}</span>`).join("")}
+function render(){renderField();renderSeeds();renderMarket();renderShop();renderBag();renderDecor();$("#coins").textContent=state.coins;$("#energy").textContent=state.energy;$("#month").textContent=months[state.month];$("#toolLevel").textContent=state.toolLevel;$("#demandHint").textContent=`${season()}季`;$$(".tool-btn").forEach(b=>b.classList.toggle("active",b.dataset.tool===state.tool));$$(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.shop===state.shop))}
+function log(t){let l=$("#log"),li=document.createElement("li");li.textContent=t;l.prepend(li);while(l.children.length>8)l.lastChild.remove()}
+$$(".tool-btn").forEach(b=>b.onclick=()=>{state.tool=b.dataset.tool;render()});$$("[data-shop]").forEach(b=>b.onclick=()=>{state.shop=b.dataset.shop;render()});$("#shopBtn").onclick=()=>{state.shop="seeds";$("#shop").classList.add("open");render()};$("#merchantBtn").onclick=()=>{state.shop="seeds";$("#shop").classList.add("open");log("商人：先買種子再播種，收成後也可以賣給我。");render()};$("#closeShop").onclick=()=>$("#shop").classList.remove("open");$("#bagBtn").onclick=()=>{$("#bag").classList.add("open");renderBag()};$("#closeBag").onclick=()=>$("#bag").classList.remove("open");$("#sellAllBtn").onclick=sellAll;$("#houseBtn").onclick=()=>{$("#room").classList.add("open");renderDecor()};$("#closeRoom").onclick=()=>$("#room").classList.remove("open");$$("[data-decor]").forEach(b=>b.onclick=()=>{let names={table:"木桌",bed:"床鋪",plant:"盆栽",cabinet:"收納櫃"},key=b.dataset.decor;if(!state.decor[key])return log(`要先去商人商店購買${names[key]}。`);log(`已佈置${names[key]}。`);renderDecor()});$("#startBtn").onclick=()=>{$("#intro").classList.add("hidden");log("里長伯提示：你身上有 10,000 金幣，先找商人買種子。")};setInterval(()=>{if($("#intro").classList.contains("hidden")&&!$("#room").classList.contains("open"))tick()},9500);render();log("先找商人買種子，再點背景大田地播種。");
+})();
+</script>
+</body>
+</html>
