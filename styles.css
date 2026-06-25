@@ -122,6 +122,13 @@ button:disabled {
   background: rgba(6, 12, 48, 0.86);
 }
 
+.wallet,
+.store-pill,
+.rail-btn[data-view="store"],
+.store-view {
+  display: none !important;
+}
+
 .rail {
   position: fixed;
   inset: 61px auto 0 0;
@@ -3100,8 +3107,8 @@ main {
 
   .hero {
     grid-template-columns: 1fr;
-    min-height: 450px;
-    padding-top: 26px;
+    min-height: 0;
+    padding-top: 8px;
   }
 
   .feature-board {
