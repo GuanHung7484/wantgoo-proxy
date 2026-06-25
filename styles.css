@@ -196,10 +196,10 @@ main {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(280px, 560px) minmax(240px, 420px);
+  grid-template-columns: minmax(280px, 720px);
   gap: 24px;
   align-items: end;
-  min-height: 390px;
+  min-height: 300px;
   max-width: 1120px;
   padding: 44px 0 18px;
 }
@@ -215,7 +215,7 @@ main {
 }
 
 .hero p {
-  max-width: 520px;
+  max-width: 720px;
   color: #e4ecff;
   font-size: 18px;
   line-height: 1.7;
