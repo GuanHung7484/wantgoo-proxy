@@ -66,7 +66,15 @@ canvas{display:block;touch-action:none}
 .action:disabled{filter:grayscale(.8);opacity:.55}
 .dpad{position:absolute;z-index:9;left:14px;bottom:96px;display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:6px}
 .dpad button{border:1px solid #ffffff88;border-radius:14px;background:#06253edb;color:#fff;font-size:22px;font-weight:1000;box-shadow:0 4px 12px #0008;touch-action:none}
-.dpad .up{grid-column:2}.dpad .left{grid-column:1;grid-row:2}.dpad .center{grid-column:2;grid-row:2;font-size:12px;color:#9ff4ff}.dpad .right{grid-column:3;grid-row:2}.dpad .down{grid-column:2;grid-row:3}
+.dpad .up{grid-column:2}.dpad .left{grid-column:1;grid-row:2}.dpad .center{grid-column:2;grid-row:2;font-size:19px;color:#9ff4ff}.dpad .right{grid-column:3;grid-row:2}.dpad .down{grid-column:2;grid-row:3}
+.quick-actions{position:absolute;z-index:10;right:12px;bottom:94px;display:grid;gap:8px}
+.quick-actions button{min-width:58px;min-height:42px;border:1px solid #ffffff88;border-radius:13px;background:#06253edb;color:#fff;font-size:13px;font-weight:1000;box-shadow:0 4px 12px #0008;touch-action:manipulation}
+.place-panel{position:absolute;z-index:18;right:12px;bottom:192px;display:none;width:min(240px,58vw);padding:10px;border:1px solid #72edff66;border-radius:16px;background:#031b2df0;box-shadow:0 14px 35px #0009}
+.place-panel.open{display:grid;gap:7px}
+.place-panel h3{margin:0 0 3px;font-size:15px;color:#c9fbff}
+.place-panel button{min-height:38px;border:1px solid #ffffff30;border-radius:10px;background:#0a3858;color:#fff;font-weight:900;text-align:left;padding:0 10px}
+.place-panel button.active{border-color:var(--gold);color:#2c2100;background:linear-gradient(#ffe86a,#ffae25)}
+.place-panel button:disabled{opacity:.42;filter:grayscale(1)}
 .modal{position:absolute;z-index:20;inset:0;display:grid;place-items:center;padding:18px;background:#001625b8;backdrop-filter:blur(8px)}
 .modal.hidden{display:none}
 .card{width:min(590px,94vw);max-height:92vh;overflow:auto;padding:24px;border:2px solid var(--cyan);border-radius:22px;background:linear-gradient(145deg,#075376,#031c32);box-shadow:0 25px 80px #000a;text-align:center}
@@ -104,6 +112,7 @@ canvas{display:block;touch-action:none}
   .distance-hud{bottom:77px;min-width:190px;padding:5px 11px}.distance-hud b{font-size:15px}.distance-hud span{font-size:10px}
   .controls{bottom:12px;gap:8px}.action{min-height:53px;font-size:16px}.power{bottom:80px}.rules{grid-template-columns:1fr}.card{padding:18px}
   .dpad{left:8px;bottom:82px;grid-template-columns:42px 42px 42px;grid-template-rows:42px 42px 42px;gap:5px}.dpad button{border-radius:12px;font-size:18px}
+  .quick-actions{right:8px;bottom:82px}.quick-actions button{min-width:52px;min-height:38px;font-size:12px}.place-panel{right:8px;bottom:172px;width:188px}
   .catalog{padding:10px}.catalog-head{align-items:flex-start}.catalog-head h2{font-size:22px}.catalog-tools input{width:130px}.fish-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.fish-tile{min-height:138px;padding:7px}
 }
 </style>
@@ -115,7 +124,7 @@ canvas{display:block;touch-action:none}
   <a class="back" href="index.html">← 返回大廳</a>
   <div class="title"><b>天才小釣手</b><small>MASTER ANGLER</small></div>
   <div class="stats">
-    <span class="chip">分數 <b id="score">0</b></span>
+    <span class="chip">積分 <b id="score">0</b></span>
     <span class="chip">時間 <b id="timeLeft">120</b></span>
     <span class="chip">圖鑑 <b id="caughtCount">0</b>/1000</span>
     <button class="small-btn" id="catalogBtn" type="button">魚類圖鑑</button>
@@ -145,10 +154,15 @@ canvas{display:block;touch-action:none}
 <div class="dpad" aria-label="落點方向控制">
   <button class="up" data-move="up" type="button">↑</button>
   <button class="left" data-move="left" type="button">←</button>
-  <button class="center" data-move="center" type="button">落點</button>
+  <button class="center" data-move="center" type="button" aria-label="重置落點">◎</button>
   <button class="right" data-move="right" type="button">→</button>
   <button class="down" data-move="down" type="button">↓</button>
 </div>
+<div class="quick-actions">
+  <button id="catalogFab" type="button">圖鑑</button>
+  <button id="placeFab" type="button">場所</button>
+</div>
+<section class="place-panel" id="placePanel" aria-label="場所選擇"></section>
 <div class="controls">
   <button class="action" id="mainBtn" type="button">按住蓄力</button>
   <button class="action secondary" id="reelBtn" type="button" disabled>捲線 / 拉竿</button>
@@ -226,6 +240,7 @@ class Game{
   set(next){this.state=next;this.elapsed=0;this.reeling=false;updateUI();if(next===STATES.WAITING){this.signal=this.getSignal(this.target);this.waitFor=1.15+(1-this.signal)*3.5+Math.random()*1.1;this.nextFish=this.pickFish();mission(this.signal>.7?"魚訊很強，這個落點有大魚！":this.signal>.38?"偵測到魚群，等牠咬餌。":"訊號偏弱，也可能釣到小魚。")}if(next===STATES.BITE){this.biteWindow=1.7;this.bobber.splash=1;flash("魚上鉤！");tone(880,.12);setTimeout(()=>tone(1100,.1),100)}if(next===STATES.FIGHTING){this.fish=this.nextFish||this.pickFish();this.tension.reset();this.fighter.reset(this.fish,8+this.power*.34);mission("按住捲線讓魚靠近，張力太高或太低都會跑魚。");tone(520,.12)}if(next===STATES.READY)mission("用方向鍵或觸碰水面移動落點，按住蓄力後放開拋竿。")}
   resetZones(){let r=mulberry32(1200+this.placeIndex*77);this.zones=Array.from({length:5},(_,i)=>({x:.30+r()*.55,y:.34+r()*.32,rank:i}))}
   updatePlace(){let next=PLACES.findIndex(p=>this.score<p.need+50);let unlocked=PLACES.reduce((n,p)=>this.score>=p.need?n+1:n,0)-1;let newIndex=Math.max(0,Math.min(PLACES.length-1,unlocked));if(newIndex!==this.placeIndex){this.placeIndex=newIndex;this.resetZones();flash(`解鎖：${this.place.name}`);mission(`新場所 <strong>${this.place.name}</strong> 已開放，魚種變多了。`);initRadar()}}
+  switchPlace(index){let place=PLACES[index];if(!place||this.score<place.need)return;this.placeIndex=index;this.resetZones();this.set(STATES.READY);initRadar();renderPlacePanel();flash(this.place.name)}
   nearestZone(p){return this.zones.reduce((best,z)=>Math.hypot(z.x-p.x,z.y-p.y)<Math.hypot(best.x-p.x,best.y-p.y)?z:best,this.zones[0])}
   getSignal(p){let z=this.nearestZone(p);return Math.max(0,1-Math.hypot(z.x-p.x,z.y-p.y)*4.1)}
   setAim(clientX,clientY){if(![STATES.READY,STATES.CHARGING].includes(this.state))return;let r=canvas.getBoundingClientRect();this.aim.x=Math.max(.25,Math.min(.86,(clientX-r.left)/r.width));this.aim.y=Math.max(.32,Math.min(.68,(clientY-r.top)/r.height));updateRadar()}
@@ -264,17 +279,19 @@ function drawFishIcon(c,x,y,s,fish,rot=0,ghost=false){c.save();c.translate(x,y);
   c.shadowBlur=0;c.fillStyle="#fff";c.beginPath();c.arc(22,-6,4.5,0,7);c.fill();c.fillStyle="#152531";c.beginPath();c.arc(24,-6,2.2,0,7);c.fill();c.restore()}
 function drawBackground(now){if(bg.complete&&bg.naturalWidth){let scale=Math.max(W/bg.naturalWidth,H/bg.naturalHeight),dw=bg.naturalWidth*scale,dh=bg.naturalHeight*scale;ctx.drawImage(bg,(W-dw)/2,(H-dh)/2,dw,dh)}else{let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#8ed8f2");g.addColorStop(.38,"#88d2bd");g.addColorStop(.39,"#13a4c9");g.addColorStop(1,"#035078");ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}let shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,"#00182a10");shade.addColorStop(.75,"#00182a00");shade.addColorStop(1,"#00182a55");ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);ctx.strokeStyle="#b9fbff40";ctx.lineWidth=1;for(let j=0;j<18;j++){let y=H*.38+j*j*.65+8,amp=2+j*.12;ctx.beginPath();for(let q=0;q<W;q+=18){let yy=y+Math.sin(q*.022+now*.0018+j)*amp;q?ctx.lineTo(q,yy):ctx.moveTo(q,yy)}ctx.stroke()}}
 function roundBox(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath()}
-function drawPersonAndRod(now){let mobile=W<650,px=mobile?W*.06:W*.12,py=mobile?H*.74:H*.70,tipX=W*.485,tipY=H*.245,fight=game.state===STATES.FIGHTING,bend=fight?game.tension.value*.0012:0;ctx.save();ctx.lineCap="round";ctx.strokeStyle="#1c2d38";ctx.lineWidth=mobile?10:14;ctx.beginPath();ctx.moveTo(px+18,py-28);ctx.quadraticCurveTo(W*.30,H*.36,tipX+bend*W,tipY);ctx.stroke();ctx.strokeStyle="#ead7a5";ctx.lineWidth=mobile?6:8;ctx.beginPath();ctx.moveTo(px+8,py-16);ctx.lineTo(px+34,py-42);ctx.stroke();ctx.fillStyle="#ffd9a7";ctx.beginPath();ctx.arc(px,py-48,mobile?13:17,0,7);ctx.fill();ctx.fillStyle="#2a86c8";roundBox(ctx,px-18,py-34,mobile?34:42,mobile?48:58,10);ctx.fill();ctx.fillStyle="#101820";ctx.fillRect(px-13,py-63,mobile?26:34,10);ctx.strokeStyle="#203040";ctx.lineWidth=mobile?7:9;ctx.beginPath();ctx.moveTo(px-8,py+10);ctx.lineTo(px-20,py+48);ctx.moveTo(px+14,py+10);ctx.lineTo(px+28,py+48);ctx.stroke();ctx.restore()}
+function drawRodOnly(now){let tipX=W*.485,tipY=H*.245,fight=game.state===STATES.FIGHTING,bend=fight?game.tension.value*.0012:0;ctx.save();ctx.lineCap="round";let baseX=-W*.05,baseY=H*.82;ctx.strokeStyle="#1c2d38";ctx.lineWidth=W<650?10:14;ctx.beginPath();ctx.moveTo(baseX,baseY);ctx.quadraticCurveTo(W*.24,H*.45,tipX+bend*W,tipY);ctx.stroke();ctx.strokeStyle="#0b1822";ctx.lineWidth=W<650?4:5;ctx.beginPath();ctx.moveTo(baseX+10,baseY-5);ctx.quadraticCurveTo(W*.24,H*.45,tipX+bend*W,tipY);ctx.stroke();ctx.restore()}
 function drawAimOverlay(){if(![STATES.READY,STATES.CHARGING].includes(game.state))return;let tx=game.aim.x*W,ty=game.aim.y*H,dist=Math.round(8+game.power*.34);ctx.save();ctx.strokeStyle="#7cf7ff";ctx.fillStyle="#7cf7ff";ctx.lineWidth=2;ctx.setLineDash([7,6]);ctx.beginPath();ctx.moveTo(W*.485,H*.245);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(tx,ty,24,9,0,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(tx-7,ty);ctx.lineTo(tx+7,ty);ctx.moveTo(tx,ty-7);ctx.lineTo(tx,ty+7);ctx.stroke();ctx.font="900 13px Microsoft JhengHei";ctx.textAlign="center";ctx.fillText(`${dist} m`,tx,ty-15);ctx.restore()}
 function drawBobber(now){if([STATES.READY,STATES.CHARGING].includes(game.state))return;let bx=game.bobber.x*W,by=game.bobber.y*H;if(game.state===STATES.WAITING)by+=Math.sin(now*.004)*3;if(game.state===STATES.BITE)by+=Math.sin(now*.035)*14;let tipX=W*.485,tipY=H*.245;ctx.strokeStyle=game.tension.value>82&&game.state===STATES.FIGHTING?"#ffd2a0":"#efffff";ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(tipX,tipY);ctx.quadraticCurveTo(W*(.52+(game.state===STATES.FIGHTING?game.tension.value*.0008:0)),H*.31,bx,by);ctx.stroke();if(game.bobber.splash>0||game.state===STATES.BITE||game.fighter.burst&&game.state===STATES.FIGHTING){ctx.strokeStyle="#efffff";ctx.lineWidth=2;for(let i=0;i<6;i++){let r=10+i*11+Math.sin(now*.01+i)*5;ctx.beginPath();ctx.ellipse(bx,by+8,r,r*.27,0,0,7);ctx.stroke()}}ctx.fillStyle="#fff";ctx.beginPath();ctx.ellipse(bx,by,6,17,0,0,7);ctx.fill();ctx.fillStyle="#f0443d";ctx.fillRect(bx-6,by-16,12,14)}
 function drawCatch(now){if(game.state!==STATES.CAUGHT||!game.fish)return;let t=Math.min(1,game.elapsed/1.05),fy=H*.64-Math.sin(t*Math.PI)*H*.47,fx=W*.58+Math.sin(t*5)*35;drawFishIcon(ctx,fx,fy,1.05,game.fish,-.45+t);ctx.strokeStyle="#f5ffff";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W*.485,H*.245);ctx.lineTo(fx,fy-20);ctx.stroke()}
-function draw(now){drawBackground(now);drawAimOverlay();drawPersonAndRod(now);drawBobber(now);drawCatch(now)}
+function draw(now){drawBackground(now);drawAimOverlay();drawRodOnly(now);drawBobber(now);drawCatch(now)}
 function loop(now){let dt=Math.min(.033,(now-last)/1000||0);last=now;if($("#intro").classList.contains("hidden")&&$("#result").classList.contains("hidden")&&!$("#catalog").classList.contains("open"))game.update(dt);draw(now);requestAnimationFrame(loop)}
 function tone(f=440,d=.06){if(!soundEnabled)return;try{audio||=new(window.AudioContext||window.webkitAudioContext);let o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.setValueAtTime(.06,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d)}catch(e){}}
 function bindHold(el,down,up){el.addEventListener("pointerdown",e=>{e.preventDefault();el.setPointerCapture?.(e.pointerId);down()});["pointerup","pointercancel","pointerleave"].forEach(n=>el.addEventListener(n,e=>{e.preventDefault();up()}))}
 function bindMoveButton(btn){let dir=btn.dataset.move,step=.025,move=()=>{if(dir==="left")game.moveAim(-step,0);if(dir==="right")game.moveAim(step,0);if(dir==="up")game.moveAim(0,-step);if(dir==="down")game.moveAim(0,step);if(dir==="center"){game.aim={x:.58,y:.54};updateRadar()}};btn.addEventListener("pointerdown",e=>{e.preventDefault();move();clearInterval(moveTimer);moveTimer=setInterval(move,80)});["pointerup","pointercancel","pointerleave"].forEach(n=>btn.addEventListener(n,()=>clearInterval(moveTimer)))}
 function initCatalog(){let sel=$("#catalogPlace");sel.innerHTML='<option value="all">全部場所</option>'+PLACES.map((p,i)=>`<option value="${i}">${p.name}</option>`).join("");$("#catalogSummary").innerHTML=PLACES.map((p,i)=>`<span class="place-pill ${game.score>=p.need?"":"locked"}">${p.name} ${SPECIES.filter(f=>f.place===i&&seen.has(f.id)).length}/${SPECIES.filter(f=>f.place===i).length}</span>`).join("")}
 function renderCatalog(){let place=$("#catalogPlace").value||"all";initCatalog();$("#catalogPlace").value=place;let q=$("#catalogSearch").value.trim();let items=SPECIES.filter(f=>(place==="all"||String(f.place)===place)&&(!q||f.name.includes(q))).slice(0,1000);let grid=$("#fishGrid");grid.innerHTML="";items.forEach(f=>{let tile=document.createElement("article"),known=seen.has(f.id);tile.className=`fish-tile r${f.rarity} ${known?"":"locked"}`;let art=document.createElement("canvas");art.className="fish-card-art";art.width=164;art.height=116;tile.appendChild(art);drawFishIcon(art.getContext("2d"),82,58,.82,f,0,!known);tile.insertAdjacentHTML("beforeend",`<b>${known?f.name:"???"}</b><small>${PLACES[f.place].name}｜${RARITY[f.rarity]}</small><span>${known?`${f.min}-${f.max} cm`:"尚未釣獲"}</span>`);grid.appendChild(tile)});catalogDirty=false}
+function openCatalog(){$("#catalog").classList.add("open");renderCatalog()}
+function renderPlacePanel(){let panel=$("#placePanel");panel.innerHTML="<h3>場所選擇</h3>"+PLACES.map((p,i)=>`<button type="button" data-place="${i}" class="${i===game.placeIndex?"active":""}" ${game.score<p.need?"disabled":""}>${p.name}<br><small>${game.score>=p.need?"已解鎖":`${p.need} 積分解鎖`}</small></button>`).join("");panel.querySelectorAll("button[data-place]").forEach(btn=>btn.onclick=()=>{game.switchPlace(Number(btn.dataset.place));panel.classList.remove("open")})}
 canvas.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse"||e.buttons)game.setAim(e.clientX,e.clientY)});
 canvas.addEventListener("pointerdown",e=>game.setAim(e.clientX,e.clientY));
 bindHold($("#mainBtn"),()=>game.pressMain(),()=>game.releaseMain());
@@ -285,12 +302,15 @@ addEventListener("keyup",e=>{if(e.code==="Space"){game.releaseMain();game.releas
 $("#soundToggle").onclick=toggleSound;$("#volume").oninput=applyVolume;
 $("#startBtn").onclick=()=>{$("#intro").classList.add("hidden");game.set(STATES.READY);applyVolume();startAmbient();tone()};
 $("#againBtn").onclick=()=>{$("#result").classList.add("hidden");if(game.state===STATES.ENDED){game.timeLeft=120;game.score=0;game.placeIndex=0;game.resetZones();initRadar()}game.set(STATES.READY);startAmbient()};
-$("#catalogBtn").onclick=()=>{$("#catalog").classList.add("open");renderCatalog()};
+$("#catalogBtn").onclick=openCatalog;
+$("#catalogFab").onclick=openCatalog;
+$("#placeFab").onclick=()=>{renderPlacePanel();$("#placePanel").classList.toggle("open")};
 $("#closeCatalog").onclick=()=>$("#catalog").classList.remove("open");
 $("#catalogPlace").onchange=renderCatalog;$("#catalogSearch").oninput=renderCatalog;
+document.addEventListener("contextmenu",e=>e.preventDefault());
 document.addEventListener("visibilitychange",()=>{if(document.hidden){oceanAudio.pause();stopReelSound()}else if(soundEnabled&&$("#intro").classList.contains("hidden"))startAmbient()});
 addEventListener("resize",resize);
-resize();applyVolume();initRadar();initCatalog();updateUI();requestAnimationFrame(loop);
+resize();applyVolume();initRadar();initCatalog();renderPlacePanel();updateUI();requestAnimationFrame(loop);
 })();
 </script>
 </body>
