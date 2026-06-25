@@ -3063,7 +3063,7 @@ main {
 @media (max-width: 900px) {
   .app-shell {
     padding-left: 0;
-    padding-bottom: 72px;
+    padding-bottom: 148px;
   }
 
   .topbar {
@@ -3095,7 +3095,7 @@ main {
   }
 
   main {
-    padding: 12px;
+    padding: 12px 12px 148px;
   }
 
   .hero {
