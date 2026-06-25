@@ -197,11 +197,11 @@ main {
 .hero {
   display: grid;
   grid-template-columns: minmax(280px, 720px);
-  gap: 24px;
+  gap: 12px;
   align-items: end;
-  min-height: 300px;
+  min-height: 0;
   max-width: 1120px;
-  padding: 44px 0 18px;
+  padding: 14px 0 18px;
 }
 
 .hero h1 {
