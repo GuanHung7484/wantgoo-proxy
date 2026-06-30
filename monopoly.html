@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>簡易版大富翁</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #140820;
+        --panel: rgba(33, 19, 72, .86);
+        --line: rgba(169, 214, 255, .28);
+        --text: #fff8ff;
+        --muted: #cdbde8;
+        --gold: #ffd86b;
+        --pink: #ff69c9;
+        --cyan: #53d8ff;
+        --green: #6df0a1;
+        --danger: #ff7676;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 14% 10%, rgba(255, 105, 201, .2), transparent 32%),
+          radial-gradient(circle at 82% 18%, rgba(83, 216, 255, .18), transparent 30%),
+          linear-gradient(160deg, #2a0a4d, #101149 58%, #07172e);
+        color: var(--text);
+        font-family: "Noto Sans TC", system-ui, sans-serif;
+      }
+
+      button, select {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        filter: saturate(.45);
+        opacity: .58;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px clamp(12px, 4vw, 22px);
+        background: rgba(20, 8, 42, .92);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(14px);
+      }
+
+      .topbar h1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        color: #f7d3ff;
+        font-size: clamp(20px, 5vw, 34px);
+        line-height: 1;
+      }
+
+      .topbar a {
+        color: #ff91d9;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #ff7fd2, #7d40ff);
+        box-shadow: 0 0 18px rgba(255, 105, 201, .38);
+      }
+
+      main {
+        width: min(1460px, 100%);
+        margin: 0 auto;
+        padding: clamp(12px, 3vw, 20px);
+      }
+
+      .setup {
+        display: grid;
+        gap: 16px;
+        min-height: calc(100vh - 76px);
+        align-content: center;
+      }
+
+      .intro {
+        display: grid;
+        gap: 10px;
+        max-width: 980px;
+      }
+
+      .intro h2 {
+        margin: 0;
+        font-size: clamp(34px, 8vw, 76px);
+        line-height: 1;
+        text-shadow: 0 0 26px rgba(255, 105, 201, .42);
+      }
+
+      .intro p {
+        margin: 0;
+        color: #eadffc;
+        font-size: clamp(15px, 2.4vw, 20px);
+        line-height: 1.7;
+      }
+
+      .character-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+        gap: 12px;
+      }
+
+      .character-card {
+        min-height: 170px;
+        padding: 14px;
+        border: 2px solid rgba(255,255,255,.12);
+        border-radius: 8px;
+        background: linear-gradient(155deg, rgba(255,255,255,.12), rgba(19, 24, 78, .82));
+        text-align: left;
+        transition: transform .16s ease, border-color .16s ease;
+      }
+
+      .character-card.selected {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(255, 216, 107, .2), 0 18px 32px rgba(0,0,0,.28);
+        transform: translateY(-4px);
+      }
+
+      .char-face {
+        display: inline-grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        margin-bottom: 10px;
+        border-radius: 18px;
+        background: var(--char-bg, linear-gradient(145deg, #ffca68, #ff719d));
+        font-size: 34px;
+        box-shadow: inset 0 3px 0 rgba(255,255,255,.25), 0 8px 18px rgba(0,0,0,.28);
+      }
+
+      .character-card strong {
+        display: block;
+        font-size: 22px;
+      }
+
+      .character-card span {
+        display: block;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .primary-action,
+      .action-btn {
+        min-height: 46px;
+        padding: 0 18px;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #ff77d2, #8d28dd);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,.14), 0 10px 20px rgba(0,0,0,.24);
+        font-weight: 900;
+      }
+
+      .secondary-action {
+        background: linear-gradient(180deg, #42d9ff, #2461e8);
+      }
+
+      .danger-action {
+        background: linear-gradient(180deg, #ff8f7b, #dd304d);
+      }
+
+      .game {
+        display: none;
+        gap: 14px;
+      }
+
+      .game.active {
+        display: grid;
+        grid-template-columns: minmax(720px, 1fr) minmax(320px, 410px);
+        align-items: start;
+      }
+
+      .board-wrap,
+      .side-panel,
+      .control-panel,
+      .log-panel,
+      .tile-detail {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, .25);
+      }
+
+      .board-wrap {
+        padding: 12px;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(11, minmax(44px, 1fr));
+        grid-template-rows: repeat(11, minmax(44px, 1fr));
+        gap: 5px;
+        aspect-ratio: 1;
+      }
+
+      .tile {
+        position: relative;
+        display: grid;
+        align-content: space-between;
+        min-width: 0;
+        padding: 5px;
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 8px;
+        background: rgba(255,255,255,.08);
+        overflow: hidden;
+      }
+
+      .tile h3 {
+        margin: 0;
+        font-size: clamp(10px, 1.1vw, 13px);
+        line-height: 1.15;
+      }
+
+      .tile small {
+        color: rgba(255,255,255,.72);
+        font-size: 10px;
+      }
+
+      .tile.land-normal { background: linear-gradient(145deg, rgba(83, 216, 255, .22), rgba(33, 38, 108, .84)); }
+      .tile.land-business { background: linear-gradient(145deg, rgba(255, 216, 107, .26), rgba(80, 50, 118, .84)); }
+      .tile.land-tech { background: linear-gradient(145deg, rgba(109, 240, 161, .26), rgba(25, 72, 92, .84)); }
+      .tile.start { background: linear-gradient(145deg, #51e398, #166fb1); }
+      .tile.chance { background: linear-gradient(145deg, #ff78cc, #6b3bd9); }
+      .tile.tax { background: linear-gradient(145deg, #ff896f, #8f2548); }
+      .tile.hospital { background: linear-gradient(145deg, #f7f7ff, #4b8ee8); color: #191540; }
+      .tile.bank { background: linear-gradient(145deg, #ffd86b, #b87510); color: #2e1900; }
+      .tile.research { background: linear-gradient(145deg, #95f5ff, #3936b4); }
+      .tile.jail { background: linear-gradient(145deg, #9fa7ba, #303544); }
+
+      .tile.current {
+        outline: 3px solid var(--gold);
+        box-shadow: 0 0 20px rgba(255, 216, 107, .45);
+      }
+
+      .owner-ribbon {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 5px;
+        background: var(--owner-color, transparent);
+      }
+
+      .tokens {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        min-height: 18px;
+      }
+
+      .token {
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 7px;
+        background: var(--token-color);
+        color: #08091d;
+        font-size: 13px;
+        font-weight: 900;
+        box-shadow: 0 2px 6px rgba(0,0,0,.28);
+      }
+
+      .board-center {
+        grid-column: 3 / 10;
+        grid-row: 3 / 10;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background:
+          radial-gradient(circle at 50% 16%, rgba(255, 216, 107, .25), transparent 30%),
+          linear-gradient(145deg, rgba(255,255,255,.08), rgba(21, 16, 58, .88));
+        text-align: center;
+      }
+
+      .board-center h2 {
+        margin: 0;
+        font-size: clamp(24px, 5vw, 52px);
+      }
+
+      .turn-banner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        color: var(--muted);
+        font-weight: 900;
+      }
+
+      .dice-display {
+        display: grid;
+        place-items: center;
+        width: 80px;
+        height: 80px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, #fff8e7, #ffd86b);
+        color: #381800;
+        font-size: 40px;
+        font-weight: 900;
+        box-shadow: 0 10px 24px rgba(0,0,0,.32);
+      }
+
+      .side-panel {
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .players {
+        display: grid;
+        gap: 8px;
+      }
+
+      .player-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 8px;
+        background: rgba(255,255,255,.07);
+      }
+
+      .player-card.active {
+        border-color: var(--gold);
+        background: rgba(255, 216, 107, .12);
+      }
+
+      .player-card.bankrupt {
+        opacity: .45;
+        filter: grayscale(.7);
+      }
+
+      .player-avatar {
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: var(--token-color);
+        color: #0b0d24;
+        font-size: 29px;
+        font-weight: 900;
+      }
+
+      .player-card h3 {
+        margin: 0 0 4px;
+        font-size: 18px;
+      }
+
+      .stat-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.12);
+        color: #f7f2ff;
+        font-weight: 700;
+      }
+
+      .control-panel,
+      .tile-detail,
+      .log-panel {
+        padding: 12px;
+      }
+
+      .control-panel h3,
+      .tile-detail h3,
+      .log-panel h3 {
+        margin: 0 0 8px;
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .wide {
+        grid-column: 1 / -1;
+      }
+
+      .tile-detail p {
+        margin: 5px 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .select-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      select {
+        min-height: 42px;
+        border: 1px solid rgba(255,255,255,.22);
+        border-radius: 8px;
+        background: #17133c;
+        color: var(--text);
+        padding: 0 10px;
+      }
+
+      .log-panel ol {
+        display: grid;
+        gap: 6px;
+        max-height: 270px;
+        margin: 0;
+        padding-left: 20px;
+        overflow: auto;
+        color: #efe6ff;
+      }
+
+      .rules {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .rules article {
+        padding: 10px;
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 8px;
+        background: rgba(255,255,255,.06);
+      }
+
+      .rules b {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--gold);
+      }
+
+      @media (max-width: 980px) {
+        .game.active {
+          grid-template-columns: 1fr;
+        }
+        .character-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .board {
+          grid-template-columns: repeat(11, minmax(28px, 1fr));
+          grid-template-rows: repeat(11, minmax(28px, 1fr));
+          gap: 3px;
+        }
+        .tile {
+          min-height: 38px;
+          padding: 3px;
+        }
+        .tile h3 {
+          font-size: 10px;
+        }
+        .tile small {
+          display: none;
+        }
+        .board-center {
+          grid-column: 3 / 10;
+          grid-row: 3 / 10;
+          padding: 10px;
+        }
+        .rules {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 520px) {
+        main {
+          padding: 8px;
+        }
+        .topbar h1 {
+          font-size: 18px;
+        }
+        .topbar a {
+          font-size: 13px;
+        }
+        .character-grid {
+          grid-template-columns: 1fr;
+        }
+        .board-wrap {
+          padding: 6px;
+        }
+        .tile {
+          border-radius: 5px;
+        }
+        .tile h3 {
+          font-size: 8px;
+        }
+        .token {
+          width: 14px;
+          height: 14px;
+          border-radius: 4px;
+          font-size: 10px;
+        }
+        .board-center h2 {
+          font-size: 22px;
+        }
+        .dice-display {
+          width: 58px;
+          height: 58px;
+          border-radius: 14px;
+          font-size: 30px;
+        }
+        .action-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <h1><span class="mark">🏰</span>簡易版大富翁</h1>
+      <a href="index.html">← 回到大廳</a>
+    </header>
+
+    <main>
+      <section class="setup" id="setupView">
+        <div class="intro">
+          <h2>城市、科技與武器的棋盤戰</h2>
+          <p>選擇角色後與 3 位 AI 對戰。擲骰前進、購地收租、升級建築、研究武器並攻擊對手。每位玩家初始資金 5000 萬，經過起點得 1000 萬，破產者淘汰，最後存活者獲勝。</p>
+        </div>
+        <div class="character-grid" id="characterGrid"></div>
+        <button class="primary-action" id="startBtn" type="button">開始遊戲</button>
+      </section>
+
+      <section class="game" id="gameView">
+        <div class="board-wrap">
+          <div class="board" id="board">
+            <div class="board-center">
+              <h2>簡易版大富翁</h2>
+              <div class="turn-banner">
+                <span id="turnLabel">選擇角色開始</span>
+                <span id="roundLabel">第 1 輪</span>
+              </div>
+              <div class="dice-display" id="diceDisplay">?</div>
+              <button class="primary-action" id="rollBtn" type="button">擲骰子</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side-panel">
+          <section class="players" id="playersPanel"></section>
+
+          <section class="control-panel">
+            <h3>行動</h3>
+            <div class="action-grid">
+              <button class="action-btn" id="buyBtn" type="button">購買土地</button>
+              <button class="action-btn" id="upgradeBtn" type="button">建造 / 升級</button>
+              <button class="action-btn secondary-action" id="researchBtn" type="button">研究武器</button>
+              <button class="action-btn danger-action" id="attackBtn" type="button">攻擊</button>
+              <button class="action-btn secondary-action wide" id="endTurnBtn" type="button">結束回合</button>
+              <button class="action-btn wide" id="restartBtn" type="button">重新開始遊戲</button>
+            </div>
+            <div class="select-row">
+              <select id="weaponSelect" aria-label="選擇武器"></select>
+              <select id="targetSelect" aria-label="選擇攻擊目標"></select>
+            </div>
+          </section>
+
+          <section class="tile-detail">
+            <h3>土地資訊</h3>
+            <div id="tileInfo"></div>
+          </section>
+
+          <section class="log-panel">
+            <h3>事件紀錄</h3>
+            <ol id="eventLog"></ol>
+          </section>
+
+          <section class="tile-detail">
+            <h3>玩法摘要</h3>
+            <div class="rules">
+              <article><b>大富翁流程</b>擲骰前進，空地可買，自己土地可升級，踩到別人土地要付過路費。</article>
+              <article><b>特殊格</b>銀行得 500 萬，稅金付 300 萬，醫院休養 1 回合，監獄停 1 回合，命運機會隨機事件。</article>
+              <article><b>研究武器</b>擁有建築「研究院」後可研發導彈、飛彈、無人機；核彈需 2 間研究院與 3 棟商辦大樓。</article>
+              <article><b>勝利條件</b>資金低於 0 破產，最後沒有破產的玩家獲勝。</article>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const money = (value) => `${value.toLocaleString("zh-TW")} 萬`;
+
+      const characters = [
+        { id: "axel", name: "Axel / 艾克索", icon: "🦁", color: "#ffcf5a", bg: "linear-gradient(145deg,#ffe782,#ff8b4f)" },
+        { id: "selena", name: "Selena / 賽蓮娜", icon: "🦊", color: "#ff84ca", bg: "linear-gradient(145deg,#ffc7ee,#ff6aa9)" },
+        { id: "kai", name: "Kai / 凱", icon: "🐲", color: "#66e2ff", bg: "linear-gradient(145deg,#a8f1ff,#497cff)" },
+        { id: "mia", name: "Mia / 米亞", icon: "🐰", color: "#7df0a3", bg: "linear-gradient(145deg,#d4ffc8,#44c971)" },
+      ];
+
+      const landKinds = {
+        normal: { label: "普通土地", price: 200 },
+        business: { label: "商業區", price: 500 },
+        tech: { label: "科技園區", price: 800 },
+      };
+
+      const buildingNames = ["空地", "小房子", "中房子", "大房子", "商辦大樓", "研究院", "飯店"];
+      const buildCosts = [0, 100, 300, 500, 1000, 2000, 3000];
+      const tolls = [20, 50, 100, 300, 500, 800, 1200];
+
+      const weaponDefs = {
+        missile: { label: "導彈", cost: 3000, turns: 2, desc: "指定一間敵方建築降一級" },
+        rocket: { label: "飛彈", cost: 5000, turns: 3, desc: "指定位置附近 3 間敵方建築降一級" },
+        drone: { label: "無人機", cost: 8000, turns: 4, desc: "指定玩家住院 3 回合" },
+        nuke: { label: "核彈", cost: 20000, turns: 8, desc: "指定一條街全部建築變空地" },
+      };
+
+      const boardTiles = [
+        { type: "start", name: "起點" },
+        { type: "land", name: "蘑菇巷", kind: "normal" },
+        { type: "chance", name: "命運" },
+        { type: "land", name: "星光街", kind: "normal" },
+        { type: "tax", name: "稅金" },
+        { type: "bank", name: "銀行" },
+        { type: "land", name: "月兔路", kind: "normal" },
+        { type: "land", name: "糖果鋪", kind: "business" },
+        { type: "chance", name: "機會" },
+        { type: "land", name: "水晶港", kind: "business" },
+        { type: "hospital", name: "醫院" },
+        { type: "land", name: "翡翠市集", kind: "business" },
+        { type: "research", name: "研究院" },
+        { type: "land", name: "星艦園", kind: "tech" },
+        { type: "land", name: "龍翼塔", kind: "tech" },
+        { type: "chance", name: "命運" },
+        { type: "land", name: "彩虹道", kind: "normal" },
+        { type: "tax", name: "稅金" },
+        { type: "land", name: "寶石廣場", kind: "business" },
+        { type: "land", name: "魔法百貨", kind: "business" },
+        { type: "jail", name: "監獄" },
+        { type: "land", name: "琉璃街", kind: "normal" },
+        { type: "chance", name: "機會" },
+        { type: "land", name: "雲端園區", kind: "tech" },
+        { type: "bank", name: "銀行" },
+        { type: "land", name: "銀河港", kind: "business" },
+        { type: "land", name: "獨角獸谷", kind: "normal" },
+        { type: "research", name: "研究院" },
+        { type: "land", name: "發明工坊", kind: "tech" },
+        { type: "chance", name: "命運" },
+        { type: "hospital", name: "醫院" },
+        { type: "land", name: "精靈林", kind: "normal" },
+        { type: "land", name: "星核中心", kind: "tech" },
+        { type: "chance", name: "機會" },
+        { type: "land", name: "皇家商圈", kind: "business" },
+        { type: "land", name: "飛龍大道", kind: "normal" },
+        { type: "land", name: "魔晶實驗城", kind: "tech" },
+        { type: "land", name: "月影住宅", kind: "normal" },
+        { type: "land", name: "太陽商城", kind: "business" },
+        { type: "land", name: "天空城", kind: "tech" },
+      ].map((tile, index) => ({ ...tile, index, owner: null, level: 0 }));
+
+      const boardPositions = (() => {
+        const positions = [];
+        for (let col = 10; col >= 0; col -= 1) positions.push([11, col + 1]);
+        for (let row = 9; row >= 1; row -= 1) positions.push([row + 1, 1]);
+        for (let col = 1; col <= 10; col += 1) positions.push([1, col + 1]);
+        for (let row = 1; row <= 9; row += 1) positions.push([row + 1, 11]);
+        return positions;
+      })();
+
+      const state = {
+        selectedCharacter: "axel",
+        players: [],
+        current: 0,
+        round: 1,
+        phase: "setup",
+        lastDice: "?",
+        pendingAction: false,
+        winner: null,
+      };
+
+      const setupView = document.getElementById("setupView");
+      const gameView = document.getElementById("gameView");
+      const boardEl = document.getElementById("board");
+      const playersPanel = document.getElementById("playersPanel");
+      const turnLabel = document.getElementById("turnLabel");
+      const roundLabel = document.getElementById("roundLabel");
+      const diceDisplay = document.getElementById("diceDisplay");
+      const rollBtn = document.getElementById("rollBtn");
+      const buyBtn = document.getElementById("buyBtn");
+      const upgradeBtn = document.getElementById("upgradeBtn");
+      const researchBtn = document.getElementById("researchBtn");
+      const attackBtn = document.getElementById("attackBtn");
+      const endTurnBtn = document.getElementById("endTurnBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const weaponSelect = document.getElementById("weaponSelect");
+      const targetSelect = document.getElementById("targetSelect");
+      const tileInfo = document.getElementById("tileInfo");
+      const eventLog = document.getElementById("eventLog");
+
+      function initSetup() {
+        const grid = document.getElementById("characterGrid");
+        grid.innerHTML = "";
+        characters.forEach((character) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `character-card ${character.id === state.selectedCharacter ? "selected" : ""}`;
+          button.style.setProperty("--char-bg", character.bg);
+          button.innerHTML = `<span class="char-face">${character.icon}</span><strong>${character.name}</strong><span>玩家角色。其餘 3 位會由 AI 控制。</span>`;
+          button.addEventListener("click", () => {
+            state.selectedCharacter = character.id;
+            initSetup();
+          });
+          grid.appendChild(button);
+        });
+      }
+
+      function resetTiles() {
+        boardTiles.forEach((tile) => {
+          tile.owner = null;
+          tile.level = 0;
+        });
+      }
+
+      function createPlayers() {
+        const humanCharacter = characters.find((character) => character.id === state.selectedCharacter);
+        const aiCharacters = characters.filter((character) => character.id !== state.selectedCharacter);
+        state.players = [humanCharacter, ...aiCharacters].map((character, index) => ({
+          ...character,
+          isHuman: index === 0,
+          money: 5000,
+          position: 0,
+          bankrupt: false,
+          hospital: 0,
+          jail: 0,
+          research: null,
+          weapons: [],
+        }));
+      }
+
+      function startGame() {
+        resetTiles();
+        createPlayers();
+        state.current = 0;
+        state.round = 1;
+        state.phase = "ready";
+        state.lastDice = "?";
+        state.pendingAction = false;
+        state.winner = null;
+        eventLog.innerHTML = "";
+        setupView.style.display = "none";
+        gameView.classList.add("active");
+        log("遊戲開始，每位玩家獲得 5000 萬。");
+        render();
+      }
+
+      function tileClass(tile) {
+        if (tile.type === "land") return `land-${tile.kind}`;
+        return tile.type;
+      }
+
+      function tileIcon(tile) {
+        const icons = { start: "🚩", chance: "🎲", tax: "💸", bank: "🏦", hospital: "🏥", research: "🔬", jail: "⛓️" };
+        if (tile.type !== "land") return icons[tile.type];
+        if (tile.kind === "tech") return "⚙️";
+        if (tile.kind === "business") return "🏪";
+        return "🏡";
+      }
+
+      function renderBoard() {
+        [...boardEl.querySelectorAll(".tile")].forEach((tile) => tile.remove());
+        boardTiles.forEach((tile) => {
+          const [row, col] = boardPositions[tile.index];
+          const item = document.createElement("button");
+          item.type = "button";
+          item.className = `tile ${tileClass(tile)} ${currentPlayer()?.position === tile.index ? "current" : ""}`;
+          item.style.gridRow = row;
+          item.style.gridColumn = col;
+          const owner = ownerOf(tile);
+          if (owner) item.style.setProperty("--owner-color", owner.color);
+          const tokens = state.players
+            .filter((player) => !player.bankrupt && player.position === tile.index)
+            .map((player) => `<span class="token" style="--token-color:${player.color}">${player.icon}</span>`)
+            .join("");
+          const meta = tile.type === "land"
+            ? `${landKinds[tile.kind].label} · ${buildingNames[tile.level]}`
+            : tile.name;
+          item.innerHTML = `<h3>${tileIcon(tile)} ${tile.name}</h3><small>${meta}</small><div class="tokens">${tokens}</div><span class="owner-ribbon"></span>`;
+          item.addEventListener("click", () => renderTileInfo(tile));
+          boardEl.appendChild(item);
+        });
+      }
+
+      function renderPlayers() {
+        playersPanel.innerHTML = "";
+        state.players.forEach((player, index) => {
+          const card = document.createElement("article");
+          card.className = `player-card ${index === state.current ? "active" : ""} ${player.bankrupt ? "bankrupt" : ""}`;
+          card.innerHTML = `
+            <span class="player-avatar" style="--token-color:${player.color}">${player.icon}</span>
+            <div>
+              <h3>${player.name}${player.isHuman ? "（你）" : "（AI）"}</h3>
+              <div class="stat-line">
+                <span class="pill">資金 ${money(player.money)}</span>
+                <span class="pill">位置 ${boardTiles[player.position].name}</span>
+                <span class="pill">土地 ${ownedLands(index).length}</span>
+                <span class="pill">武器 ${player.weapons.length}</span>
+                ${player.hospital ? `<span class="pill">住院 ${player.hospital}</span>` : ""}
+                ${player.jail ? `<span class="pill">監獄 ${player.jail}</span>` : ""}
+                ${player.research ? `<span class="pill">研究 ${weaponDefs[player.research.type].label} ${player.research.left}</span>` : ""}
+                ${player.bankrupt ? `<span class="pill">破產</span>` : ""}
+              </div>
+            </div>`;
+          playersPanel.appendChild(card);
+        });
+      }
+
+      function renderTileInfo(tile = boardTiles[currentPlayer()?.position || 0]) {
+        const owner = ownerOf(tile);
+        if (tile.type !== "land") {
+          tileInfo.innerHTML = `<p><b>${tileIcon(tile)} ${tile.name}</b></p><p>${specialDescription(tile)}</p>`;
+          return;
+        }
+        tileInfo.innerHTML = `
+          <p><b>${tileIcon(tile)} ${tile.name}</b></p>
+          <p>類型：${landKinds[tile.kind].label}，價格：${money(landKinds[tile.kind].price)}</p>
+          <p>持有者：${owner ? owner.name : "無"}</p>
+          <p>建築：${buildingNames[tile.level]}，過路費：${money(tolls[tile.level])}</p>
+          <p>下一級：${tile.level < buildingNames.length - 1 ? `${buildingNames[tile.level + 1]} / ${money(buildCosts[tile.level + 1])}` : "已滿級"}</p>`;
+      }
+
+      function specialDescription(tile) {
+        const map = {
+          start: "經過或停在起點可獲得 1000 萬。",
+          chance: "抽一張命運機會卡，可能發財也可能受災。",
+          tax: "繳納稅金 300 萬。",
+          bank: "銀行分紅，獲得 500 萬。",
+          hospital: "一般檢查，休養 1 回合；被無人機攻擊會住院 3 回合。",
+          research: "研究院格會讓目前研究進度額外推進 1 回合。",
+          jail: "進監獄停 1 回合。",
+        };
+        return map[tile.type] || "";
+      }
+
+      function renderControls() {
+        const player = currentPlayer();
+        const tile = boardTiles[player?.position || 0];
+        const humanTurn = player?.isHuman && !player.bankrupt && state.phase !== "gameover";
+        rollBtn.disabled = !humanTurn || state.pendingAction || state.phase !== "ready";
+        buyBtn.disabled = !canBuy(player, tile);
+        upgradeBtn.disabled = !canUpgrade(player, tile);
+        researchBtn.disabled = !canStartResearch(player);
+        attackBtn.disabled = !canAttack(player);
+        endTurnBtn.disabled = !humanTurn || state.phase === "ready";
+        diceDisplay.textContent = state.lastDice;
+        turnLabel.textContent = state.winner ? `${state.winner.name} 獲勝！` : `目前回合：${player?.name || ""}`;
+        roundLabel.textContent = `第 ${state.round} 輪`;
+        renderWeaponSelect();
+        renderTargetSelect();
+      }
+
+      function renderWeaponSelect() {
+        const player = currentPlayer();
+        const options = Object.entries(weaponDefs).map(([key, weapon]) => {
+          const owned = player?.weapons.filter((id) => id === key).length || 0;
+          return `<option value="${key}">${weapon.label}（持有 ${owned}）</option>`;
+        });
+        weaponSelect.innerHTML = options.join("");
+      }
+
+      function renderTargetSelect() {
+        const targets = [];
+        state.players.forEach((player, index) => {
+          if (index !== state.current && !player.bankrupt) targets.push(`<option value="player:${index}">${player.name}</option>`);
+        });
+        boardTiles.forEach((tile) => {
+          if (tile.type === "land" && tile.owner !== null && tile.owner !== state.current && tile.level > 0) {
+            targets.push(`<option value="tile:${tile.index}">${tile.name} / ${ownerOf(tile).name}</option>`);
+          }
+        });
+        targetSelect.innerHTML = targets.join("");
+      }
+
+      function render() {
+        renderBoard();
+        renderPlayers();
+        renderTileInfo();
+        renderControls();
+      }
+
+      function currentPlayer() {
+        return state.players[state.current];
+      }
+
+      function ownerOf(tile) {
+        if (tile.owner === null || tile.owner === undefined) return null;
+        return state.players[tile.owner];
+      }
+
+      function ownedLands(index) {
+        return boardTiles.filter((tile) => tile.type === "land" && tile.owner === index);
+      }
+
+      function currentPlayerHasResearchLab(player = currentPlayer()) {
+        const index = state.players.indexOf(player);
+        return ownedLands(index).some((tile) => tile.level >= 5);
+      }
+
+      function hasNukeCondition(player = currentPlayer()) {
+        const index = state.players.indexOf(player);
+        const lands = ownedLands(index);
+        return lands.filter((tile) => tile.level >= 5).length >= 2 && lands.filter((tile) => tile.level >= 4).length >= 3;
+      }
+
+      function canBuy(player, tile) {
+        return player?.isHuman && state.pendingAction && tile.type === "land" && tile.owner === null && player.money >= landKinds[tile.kind].price;
+      }
+
+      function canUpgrade(player, tile) {
+        return player?.isHuman && state.pendingAction && tile.type === "land" && tile.owner === state.current && tile.level < 6 && player.money >= buildCosts[tile.level + 1];
+      }
+
+      function canStartResearch(player) {
+        if (!player?.isHuman || !state.pendingAction || player.research || player.money < 1000) return false;
+        return currentPlayerHasResearchLab(player);
+      }
+
+      function canAttack(player) {
+        return Boolean(player?.isHuman && state.pendingAction && player.weapons.length);
+      }
+
+      function log(message) {
+        const item = document.createElement("li");
+        item.textContent = message;
+        eventLog.prepend(item);
+      }
+
+      function updateResearch(player) {
+        if (!player.research) return;
+        player.research.left -= 1;
+        if (player.research.left <= 0) {
+          player.weapons.push(player.research.type);
+          log(`${player.name} 完成 ${weaponDefs[player.research.type].label} 研發。`);
+          player.research = null;
+        }
+      }
+
+      function rollDice() {
+        const player = currentPlayer();
+        if (!player || player.bankrupt || state.phase !== "ready") return;
+        startTurnMaintenance(player);
+        if (state.phase !== "moving") return;
+        const dice = Math.floor(Math.random() * 6) + 1;
+        state.lastDice = dice;
+        movePlayer(player, dice);
+        resolveTile(player);
+        state.pendingAction = player.isHuman && !player.bankrupt;
+        state.phase = player.isHuman ? "action" : "ai-action";
+        render();
+        if (!player.isHuman) setTimeout(aiAfterLanding, 450);
+      }
+
+      function startTurnMaintenance(player) {
+        updateResearch(player);
+        if (player.hospital > 0) {
+          player.hospital -= 1;
+          log(`${player.name} 住院休養，跳過本回合。`);
+          state.phase = "skip";
+          render();
+          setTimeout(endTurn, player.isHuman ? 0 : 650);
+          return;
+        }
+        if (player.jail > 0) {
+          player.jail -= 1;
+          log(`${player.name} 在監獄停留，跳過本回合。`);
+          state.phase = "skip";
+          render();
+          setTimeout(endTurn, player.isHuman ? 0 : 650);
+          return;
+        }
+        state.phase = "moving";
+      }
+
+      function movePlayer(player, steps) {
+        const old = player.position;
+        player.position = (player.position + steps) % boardTiles.length;
+        if (old + steps >= boardTiles.length) {
+          player.money += 1000;
+          log(`${player.name} 經過起點，獲得 ${money(1000)}。`);
+        }
+        log(`${player.name} 擲出 ${steps}，移動到 ${boardTiles[player.position].name}。`);
+      }
+
+      function resolveTile(player) {
+        const tile = boardTiles[player.position];
+        if (tile.type === "land") resolveLand(player, tile);
+        if (tile.type === "chance") drawChance(player);
+        if (tile.type === "tax") payBank(player, 300, "繳納稅金");
+        if (tile.type === "bank") gainMoney(player, 500, "銀行分紅");
+        if (tile.type === "hospital") {
+          player.hospital = Math.max(player.hospital, 1);
+          log(`${player.name} 到醫院檢查，休養 1 回合。`);
+        }
+        if (tile.type === "jail") {
+          player.jail = Math.max(player.jail, 1);
+          log(`${player.name} 進入監獄，停 1 回合。`);
+        }
+        if (tile.type === "research" && player.research) {
+          player.research.left -= 1;
+          log(`${player.name} 抵達研究院，研究進度提前 1 回合。`);
+          updateResearch(player);
+        }
+        checkBankruptcy(player);
+      }
+
+      function resolveLand(player, tile) {
+        if (tile.owner === null) {
+          log(`${player.name} 踩到空地 ${tile.name}，可購買。`);
+          return;
+        }
+        if (tile.owner === state.current) {
+          log(`${player.name} 回到自己的 ${tile.name}，可建造或升級。`);
+          return;
+        }
+        const owner = ownerOf(tile);
+        if (owner.bankrupt || owner.hospital > 0) {
+          log(`${tile.name} 的持有者無法收租。`);
+          return;
+        }
+        const toll = tolls[tile.level];
+        player.money -= toll;
+        owner.money += toll;
+        log(`${player.name} 支付 ${money(toll)} 過路費給 ${owner.name}。`);
+      }
+
+      function gainMoney(player, amount, reason) {
+        player.money += amount;
+        log(`${player.name} ${reason}，獲得 ${money(amount)}。`);
+      }
+
+      function payBank(player, amount, reason) {
+        player.money -= amount;
+        log(`${player.name} ${reason}，支付 ${money(amount)}。`);
+      }
+
+      function drawChance(player) {
+        const events = [
+          () => gainMoney(player, 3000, "中樂透"),
+          () => gainMoney(player, 5000, "獲得政府補助"),
+          () => gainMoney(player, 10000, "股票大漲"),
+          () => damageRandomBuilding(player, "火災"),
+          () => payBank(player, 5000, "遇到地震損失"),
+          () => payBank(player, 3000, "被稅務稽查罰款"),
+          () => { player.hospital = Math.max(player.hospital, 1); log(`${player.name} 生病住院 1 回合。`); },
+        ];
+        events[Math.floor(Math.random() * events.length)]();
+      }
+
+      function damageRandomBuilding(player, reason) {
+        const lands = ownedLands(state.players.indexOf(player)).filter((tile) => tile.level > 0);
+        if (!lands.length) {
+          log(`${player.name} 遭遇${reason}，但沒有建築受損。`);
+          return;
+        }
+        const tile = lands[Math.floor(Math.random() * lands.length)];
+        tile.level -= 1;
+        log(`${player.name} 的 ${tile.name} 遭遇${reason}，建築降級為 ${buildingNames[tile.level]}。`);
+      }
+
+      function buyLand() {
+        const player = currentPlayer();
+        const tile = boardTiles[player.position];
+        if (!canBuy(player, tile)) return;
+        const price = landKinds[tile.kind].price;
+        player.money -= price;
+        tile.owner = state.current;
+        log(`${player.name} 購買 ${tile.name}，花費 ${money(price)}。`);
+        checkBankruptcy(player);
+        render();
+      }
+
+      function upgradeLand() {
+        const player = currentPlayer();
+        const tile = boardTiles[player.position];
+        if (!canUpgrade(player, tile)) return;
+        const cost = buildCosts[tile.level + 1];
+        player.money -= cost;
+        tile.level += 1;
+        log(`${player.name} 將 ${tile.name} 升級為 ${buildingNames[tile.level]}，花費 ${money(cost)}。`);
+        checkBankruptcy(player);
+        render();
+      }
+
+      function startResearch(type = weaponSelect.value) {
+        const player = currentPlayer();
+        const weapon = weaponDefs[type];
+        if (!canStartResearch(player)) return false;
+        if (type === "nuke" && !hasNukeCondition(player)) {
+          if (player.isHuman) log("核彈需要 2 間研究院與 3 棟商辦大樓。");
+          return false;
+        }
+        if (player.money < weapon.cost) return false;
+        player.money -= weapon.cost;
+        player.research = { type, left: weapon.turns };
+        log(`${player.name} 開始研究 ${weapon.label}，需 ${weapon.turns} 回合。`);
+        render();
+        return true;
+      }
+
+      function attackWithWeapon(type = weaponSelect.value, targetValue = targetSelect.value) {
+        const player = currentPlayer();
+        if (!canAttack(player) || !player.weapons.includes(type)) return false;
+        if (type === "drone") {
+          const validTarget = targetValue?.startsWith("player:") ? targetValue : targetSelect.querySelector('option[value^="player:"]')?.value;
+          const targetIndex = Number(validTarget?.split(":")[1]);
+          const target = state.players[targetIndex];
+          if (!target || target.bankrupt || targetIndex === state.current) return false;
+          consumeWeapon(player, type);
+          target.hospital = Math.max(target.hospital, 3);
+          log(`${player.name} 使用無人機攻擊 ${target.name}，對方住院 3 回合。`);
+        } else {
+          const validTarget = targetValue?.startsWith("tile:") ? targetValue : targetSelect.querySelector('option[value^="tile:"]')?.value;
+          const tileIndex = Number(validTarget?.split(":")[1]);
+          const tile = boardTiles[tileIndex];
+          if (!tile || tile.type !== "land") return false;
+          consumeWeapon(player, type);
+          if (type === "missile") {
+            degradeTile(tile, `${player.name} 使用導彈攻擊 ${tile.name}`);
+          }
+          if (type === "rocket") {
+            for (let offset = -1; offset <= 1; offset += 1) {
+              const targetTile = boardTiles[(tile.index + offset + boardTiles.length) % boardTiles.length];
+              if (targetTile.type === "land" && targetTile.owner !== state.current) degradeTile(targetTile, `${player.name} 使用飛彈波及 ${targetTile.name}`);
+            }
+          }
+          if (type === "nuke") {
+            const blockStart = Math.floor(tile.index / 10) * 10;
+            for (let index = blockStart; index < blockStart + 10; index += 1) {
+              const targetTile = boardTiles[index];
+              if (targetTile?.type === "land" && targetTile.owner !== state.current) {
+                targetTile.level = 0;
+                log(`${player.name} 使用核彈，${targetTile.name} 變回空地。`);
+              }
+            }
+          }
+        }
+        render();
+        return true;
+      }
+
+      function consumeWeapon(player, type) {
+        const weaponIndex = player.weapons.indexOf(type);
+        if (weaponIndex >= 0) player.weapons.splice(weaponIndex, 1);
+      }
+
+      function degradeTile(tile, prefix) {
+        if (tile.level > 0) {
+          tile.level -= 1;
+          log(`${prefix}，建築降級為 ${buildingNames[tile.level]}。`);
+        } else {
+          log(`${prefix}，但該土地沒有建築。`);
+        }
+      }
+
+      function checkBankruptcy(player) {
+        if (player.money >= 0 || player.bankrupt) return;
+        const playerIndex = state.players.indexOf(player);
+        player.bankrupt = true;
+        boardTiles.forEach((tile) => {
+          if (tile.owner === playerIndex) {
+            tile.owner = null;
+            tile.level = 0;
+          }
+        });
+        log(`${player.name} 資金低於 0，破產淘汰。`);
+        checkWinner();
+      }
+
+      function checkWinner() {
+        const alive = state.players.filter((player) => !player.bankrupt);
+        if (alive.length === 1) {
+          state.winner = alive[0];
+          state.phase = "gameover";
+          log(`${alive[0].name} 成為最後倖存者，獲勝！`);
+        }
+      }
+
+      function endTurn() {
+        state.pendingAction = false;
+        checkWinner();
+        if (state.phase === "gameover") {
+          render();
+          return;
+        }
+        do {
+          state.current = (state.current + 1) % state.players.length;
+          if (state.current === 0) state.round += 1;
+        } while (state.players[state.current].bankrupt);
+        state.phase = "ready";
+        state.lastDice = "?";
+        render();
+        if (!currentPlayer().isHuman) setTimeout(rollDice, 650);
+      }
+
+      function aiAfterLanding() {
+        const player = currentPlayer();
+        if (!player || player.bankrupt) return endTurn();
+        const tile = boardTiles[player.position];
+        if (player.money >= 1000) {
+          if (tile.type === "land" && tile.owner === null && player.money >= landKinds[tile.kind].price) buyLand();
+          if (tile.type === "land" && tile.owner === state.current && tile.level < 6 && player.money >= buildCosts[tile.level + 1]) upgradeLand();
+          aiResearch(player);
+        }
+        aiAttack(player);
+        setTimeout(endTurn, 650);
+      }
+
+      function aiResearch(player) {
+        if (!currentPlayerHasResearchLab(player) || player.research || player.money < 1000) return;
+        const order = hasNukeCondition(player) ? ["nuke", "rocket", "missile", "drone"] : ["rocket", "missile", "drone"];
+        for (const type of order) {
+          if (player.money >= weaponDefs[type].cost) {
+            startResearch(type);
+            return;
+          }
+        }
+      }
+
+      function aiAttack(player) {
+        if (!player.weapons.length) return;
+        const target = richestEnemy();
+        if (!target) return;
+        const type = player.weapons[0];
+        let targetValue = `player:${state.players.indexOf(target)}`;
+        if (type !== "drone") {
+          const targetLand = ownedLands(state.players.indexOf(target)).filter((tile) => tile.level > 0)[0];
+          if (!targetLand) return;
+          targetValue = `tile:${targetLand.index}`;
+        }
+        attackWithWeapon(type, targetValue);
+      }
+
+      function richestEnemy() {
+        const enemies = state.players.filter((player, index) => index !== state.current && !player.bankrupt);
+        return enemies.sort((a, b) => totalAssets(b) - totalAssets(a))[0];
+      }
+
+      function totalAssets(player) {
+        const index = state.players.indexOf(player);
+        return player.money + ownedLands(index).reduce((sum, tile) => sum + landKinds[tile.kind].price + buildCosts.slice(0, tile.level + 1).reduce((a, b) => a + b, 0), 0);
+      }
+
+      document.getElementById("startBtn").addEventListener("click", startGame);
+      rollBtn.addEventListener("click", rollDice);
+      buyBtn.addEventListener("click", buyLand);
+      upgradeBtn.addEventListener("click", upgradeLand);
+      researchBtn.addEventListener("click", () => startResearch());
+      attackBtn.addEventListener("click", () => attackWithWeapon());
+      endTurnBtn.addEventListener("click", endTurn);
+      restartBtn.addEventListener("click", () => {
+        gameView.classList.remove("active");
+        setupView.style.display = "grid";
+        initSetup();
+      });
+
+      initSetup();
+    </script>
+  </body>
+</html>
