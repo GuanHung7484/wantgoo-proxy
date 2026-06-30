@@ -782,6 +782,98 @@ button, a, [data-clickable], .card.selectable, .card.nn-playable {
 
   /* 99 中心圓 */
   .nn-total { width: 78px; height: 78px; font-size: 2.1rem; }
+
+  .blackjack-page {
+    --card-w: 66px;
+    --card-h: 94px;
+    --card-font: 1.06rem;
+    --card-suit-font: 1.34rem;
+    --btn-font: 1rem;
+  }
+
+  .blackjack-page .game-table {
+    padding: 18px 10px calc(22px + env(safe-area-inset-bottom, 0px));
+    gap: 14px;
+  }
+
+  .blackjack-page .scoreboard {
+    padding: 16px 14px;
+    margin-bottom: 8px;
+    border-radius: 18px;
+    font-size: 1.08rem;
+  }
+
+  .blackjack-page .scoreboard strong {
+    font-size: 1.15rem;
+  }
+
+  .blackjack-page .scoreboard .score-item {
+    font-size: 1rem;
+  }
+
+  .blackjack-page .scoreboard .score-item span {
+    font-size: 1.35rem;
+  }
+
+  .blackjack-page .bj-table-wrap {
+    gap: 12px;
+  }
+
+  .blackjack-page .bj-player-box {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .blackjack-page .bj-player-label {
+    gap: 7px;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .blackjack-page .bj-role,
+  .blackjack-page .bj-score {
+    font-size: 0.95rem;
+  }
+
+  .blackjack-page .bj-hand {
+    min-height: 100px;
+    gap: 6px;
+  }
+
+  .blackjack-page .bj-small-card {
+    width: 58px !important;
+    height: 82px !important;
+    font-size: 0.94rem !important;
+  }
+
+  .blackjack-page .bj-small-card .card-value {
+    font-size: 1rem !important;
+  }
+
+  .blackjack-page .bj-small-card .card-suit {
+    font-size: 1.18rem !important;
+  }
+
+  .blackjack-page .bj-small-card.facedown::after {
+    font-size: 1.35rem !important;
+  }
+
+  .blackjack-page .message {
+    font-size: 1.65rem;
+    min-height: 2.3rem;
+  }
+
+  .blackjack-page .action-bar {
+    gap: 12px;
+  }
+
+  .blackjack-page .btn {
+    min-width: 100px;
+    min-height: 54px;
+    padding: 13px 24px;
+    font-size: 1rem;
+  }
 }
 
 /* ── 小手機 ≤ 520px ── 四方位切換為上下堆疊 ── */
@@ -816,6 +908,58 @@ button, a, [data-clickable], .card.selectable, .card.nn-playable {
   .bj-small-card .card-value { font-size: 0.7rem !important; }
   .bj-small-card .card-suit  { font-size: 0.75rem !important; }
   .bj-small-card.facedown::after { font-size: 1rem !important; }
+
+  .blackjack-page {
+    --card-w: 64px;
+    --card-h: 92px;
+    --card-font: 1.02rem;
+    --card-suit-font: 1.28rem;
+  }
+
+  .blackjack-page .bj-table-wrap {
+    gap: 14px;
+  }
+
+  .blackjack-page .bj-top,
+  .blackjack-page .bj-bottom {
+    width: 100%;
+  }
+
+  .blackjack-page .bj-player-box {
+    min-height: 158px;
+  }
+
+  .blackjack-page .bj-top .bj-player-box,
+  .blackjack-page .bj-bottom .bj-player-box {
+    min-height: 174px;
+  }
+
+  .blackjack-page .bj-center {
+    min-height: 92px;
+  }
+
+  .blackjack-page .bj-left .bj-hand,
+  .blackjack-page .bj-right .bj-hand {
+    justify-content: flex-start;
+  }
+
+  .blackjack-page .bj-small-card {
+    width: 54px !important;
+    height: 78px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .blackjack-page .bj-small-card .card-value {
+    font-size: 0.95rem !important;
+  }
+
+  .blackjack-page .bj-small-card .card-suit {
+    font-size: 1.1rem !important;
+  }
+
+  .blackjack-page .bj-small-card.facedown::after {
+    font-size: 1.28rem !important;
+  }
 
   /* 抽鬼牌 四方位 → 堆疊 */
   .om-table-wrap {
@@ -890,6 +1034,24 @@ button, a, [data-clickable], .card.selectable, .card.nn-playable {
   }
   .card.facedown::after { font-size: 1.1rem; }
   .bj-small-card { width: 34px !important; height: 50px !important; }
+  .blackjack-page {
+    --card-w: 58px;
+    --card-h: 84px;
+    --card-font: 0.94rem;
+    --card-suit-font: 1.16rem;
+  }
+  .blackjack-page .bj-small-card {
+    width: 50px !important;
+    height: 72px !important;
+    font-size: 0.82rem !important;
+  }
+  .blackjack-page .bj-player-label {
+    font-size: 0.92rem;
+  }
+  .blackjack-page .btn {
+    min-width: 92px;
+    padding-inline: 18px;
+  }
   .om-bottom-cards .card { width: 44px; height: 64px; }
   .om-top-card { width: 30px; height: 44px; }
   .om-side-card { width: 40px; height: 58px; }
