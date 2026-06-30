@@ -336,6 +336,10 @@ main {
     linear-gradient(145deg, rgba(27, 99, 205, 0.9), rgba(84, 16, 143, 0.95));
 }
 
+.bowling-card .game-link {
+  min-width: 108px;
+}
+
 .game-link {
   display: inline-grid;
   place-items: center;
@@ -3248,6 +3252,10 @@ main {
     min-height: 34px;
     padding: 0 13px;
     font-size: 13px;
+  }
+
+  .lobby-view .bowling-card .game-link {
+    min-width: 0;
   }
 
   .slot-reels {
