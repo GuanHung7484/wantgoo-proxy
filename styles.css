@@ -277,7 +277,7 @@ main {
 
 .game-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
   gap: 14px;
   max-width: 1120px;
 }
@@ -328,6 +328,12 @@ main {
   background:
     radial-gradient(circle at 80% 12%, rgba(255, 216, 107, 0.5), transparent 28%),
     linear-gradient(145deg, rgba(84, 189, 129, 0.82), rgba(64, 36, 140, 0.96));
+}
+
+.bowling-card {
+  background:
+    radial-gradient(circle at 80% 12%, rgba(255, 232, 150, 0.54), transparent 28%),
+    linear-gradient(145deg, rgba(27, 99, 205, 0.9), rgba(84, 16, 143, 0.95));
 }
 
 .game-link {
@@ -3206,6 +3212,10 @@ main {
 
   .lobby-view .monopoly-card {
     order: 11;
+  }
+
+  .lobby-view .bowling-card {
+    order: 12;
   }
 
   .lobby-view .game-card {

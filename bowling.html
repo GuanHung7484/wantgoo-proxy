@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>保齡球</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07122f;
+        --panel: rgba(15, 20, 58, 0.88);
+        --line: rgba(120, 193, 255, 0.32);
+        --text: #f7fbff;
+        --muted: #b8c5ef;
+        --gold: #ffd35c;
+        --pink: #ff65d5;
+        --cyan: #63dcff;
+        --green: #70eb9e;
+        --danger: #ff6a7c;
+        --shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: "Noto Sans TC", system-ui, sans-serif;
+        background:
+          radial-gradient(circle at 20% 10%, rgba(95, 83, 255, 0.32), transparent 26%),
+          radial-gradient(circle at 78% 16%, rgba(255, 101, 213, 0.18), transparent 24%),
+          radial-gradient(circle at 50% 100%, rgba(255, 194, 81, 0.18), transparent 35%),
+          linear-gradient(160deg, #08112a 0%, #111a44 52%, #0a0824 100%);
+      }
+
+      button, input {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 18px;
+        background: rgba(10, 15, 40, 0.92);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(14px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #66d8ff, #5a36ee);
+        box-shadow: 0 0 18px rgba(99, 220, 255, 0.3);
+        font-size: 20px;
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 20px;
+        line-height: 1.1;
+      }
+
+      .brand span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .back {
+        color: #ff93de;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      main {
+        width: min(1600px, 100%);
+        margin: 0 auto;
+        padding: 14px;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.85fr);
+        gap: 14px;
+        align-items: start;
+      }
+
+      .stage,
+      .side {
+        min-width: 0;
+      }
+
+      .hud {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .hud-card {
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(8, 14, 48, 0.82);
+        box-shadow: var(--shadow);
+      }
+
+      .hud-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0;
+      }
+
+      .hud-card strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 26px;
+        line-height: 1;
+      }
+
+      .hud-card.badge {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        background: linear-gradient(180deg, rgba(255, 101, 213, 0.2), rgba(90, 54, 238, 0.28));
+        color: #ffe4fb;
+      }
+
+      .hud-card.badge strong {
+        font-size: 22px;
+      }
+
+      .arena {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.16), transparent 18%),
+          radial-gradient(circle at 50% 100%, rgba(255, 209, 92, 0.16), transparent 32%),
+          linear-gradient(180deg, #241254 0%, #121943 28%, #09102e 100%);
+        box-shadow: var(--shadow);
+      }
+
+      .arena::before {
+        content: "";
+        position: absolute;
+        inset: auto 0 0;
+        height: 22%;
+        background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.38));
+        pointer-events: none;
+      }
+
+      .neon-sign {
+        position: absolute;
+        top: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        padding: 8px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        border-radius: 999px;
+        background: rgba(14, 18, 52, 0.76);
+        color: #ff89df;
+        font-size: clamp(20px, 3vw, 40px);
+        font-weight: 900;
+        letter-spacing: 0;
+        text-shadow: 0 0 18px rgba(255, 101, 213, 0.55);
+      }
+
+      .lane-shell {
+        position: relative;
+        min-height: 760px;
+        padding: 88px 14px 22px;
+        perspective: 1200px;
+      }
+
+      .lane-base {
+        position: absolute;
+        inset: 84px 12px 18px;
+        border-radius: 22px;
+        background:
+          radial-gradient(circle at 50% 5%, rgba(255,255,255,0.08), transparent 20%),
+          linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.18));
+        transform: rotateX(58deg);
+        transform-origin: center bottom;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 -28px 40px rgba(0,0,0,0.35);
+      }
+
+      .lane {
+        position: absolute;
+        left: 50%;
+        bottom: 44px;
+        width: min(88%, 980px);
+        height: 640px;
+        transform: translateX(-50%) perspective(1200px) rotateX(58deg);
+        transform-origin: center bottom;
+        border-radius: 26px 26px 18px 18px;
+        background:
+          linear-gradient(90deg, #5f2c10 0 4%, transparent 4% 96%, #5f2c10 96% 100%),
+          linear-gradient(180deg, #f2c16d 0%, #d99143 24%, #b96b29 56%, #8a4a19 100%);
+        box-shadow:
+          inset 0 0 0 1px rgba(255,255,255,0.18),
+          inset 0 0 32px rgba(255, 240, 190, 0.2),
+          0 24px 50px rgba(0,0,0,0.42);
+      }
+
+      .lane::before {
+        content: "";
+        position: absolute;
+        inset: 2% 8%;
+        border-radius: 18px;
+        background:
+          repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.08) 0 7px,
+            transparent 7px 38px
+          ),
+          linear-gradient(180deg, rgba(255,255,255,0.14), transparent 20%, transparent 80%, rgba(0,0,0,0.18));
+        mix-blend-mode: screen;
+        pointer-events: none;
+      }
+
+      .lane::after {
+        content: "";
+        position: absolute;
+        inset: 0 7.8%;
+        border-left: 10px solid rgba(75, 33, 12, 0.92);
+        border-right: 10px solid rgba(75, 33, 12, 0.92);
+        pointer-events: none;
+      }
+
+      .lane-markers {
+        position: absolute;
+        left: 50%;
+        top: 38%;
+        width: 48%;
+        height: 20px;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: space-between;
+        pointer-events: none;
+      }
+
+      .lane-markers span {
+        width: 14px;
+        height: 14px;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-top: 14px solid rgba(255, 241, 163, 0.92);
+        filter: drop-shadow(0 0 8px rgba(255, 212, 86, 0.35));
+        opacity: 0.85;
+      }
+
+      .pins {
+        position: absolute;
+        inset: 7.5% 18% 60% 18%;
+        pointer-events: none;
+      }
+
+      .pin {
+        position: absolute;
+        width: 38px;
+        height: 74px;
+        transform: translate(-50%, -50%);
+        transition:
+          transform 0.42s cubic-bezier(.2,.9,.2,1),
+          opacity 0.42s ease,
+          filter 0.42s ease;
+        filter: drop-shadow(0 8px 8px rgba(0,0,0,0.28));
+        transform-origin: 50% 86%;
+      }
+
+      .pin::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 48% 48% 40% 40% / 36% 36% 62% 62%;
+        background:
+          radial-gradient(circle at 50% 10%, rgba(255,255,255,0.96), rgba(255,255,255,0.82) 20%, #f7f7fb 48%, #ebedf4 72%, #d3d7e6 100%);
+        box-shadow:
+          inset 0 -8px 0 rgba(0,0,0,0.05),
+          inset 0 8px 10px rgba(255,255,255,0.6);
+      }
+
+      .pin::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 18%;
+        width: 72%;
+        height: 16%;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: linear-gradient(90deg, #db2c3d, #ff6f7c, #db2c3d);
+        box-shadow: 0 12px 0 rgba(219, 44, 61, 0.9);
+      }
+
+      .pin.down {
+        opacity: 0.18;
+        transform:
+          translate(-50%, -50%)
+          rotate(var(--tilt, 0deg))
+          translateY(46px)
+          rotate(62deg);
+        filter: blur(0.3px) saturate(0.55);
+      }
+
+      .ball {
+        position: absolute;
+        left: 50%;
+        top: 82%;
+        width: 88px;
+        height: 88px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        box-shadow:
+          inset 0 14px 24px rgba(255,255,255,0.32),
+          inset -16px -18px 26px rgba(0,0,0,0.28),
+          0 16px 24px rgba(0,0,0,0.38);
+        transition: filter 0.2s ease;
+        z-index: 4;
+      }
+
+      .ball::before,
+      .ball::after,
+      .ball .hole {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #09090f 0 42%, #000 64%, #111 100%);
+        box-shadow: inset 0 2px 3px rgba(255,255,255,0.1);
+      }
+
+      .ball::before { width: 14px; height: 14px; top: 24%; left: 31%; }
+      .ball::after { width: 14px; height: 14px; top: 23%; right: 31%; }
+      .ball .hole { width: 14px; height: 14px; top: 43%; left: 50%; transform: translateX(-50%); }
+
+      .ball.fire {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.42), transparent 0 18%),
+          conic-gradient(from 220deg, #ffef85, #ff7c34, #d91522, #ffb046, #ffef85);
+      }
+
+      .ball.ice {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.42), transparent 0 18%),
+          radial-gradient(circle at 68% 72%, rgba(255,255,255,0.24), transparent 0 18%),
+          linear-gradient(145deg, #70e0ff, #0d79d7 55%, #0a3f9a);
+      }
+
+      .ball.lightning {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.2), transparent 0 18%),
+          linear-gradient(145deg, #5d3cff, #11111f 50%, #04050c);
+      }
+
+      .ball.lightning::before,
+      .ball.lightning::after,
+      .ball.lightning .hole {
+        box-shadow: 0 0 12px rgba(169, 93, 255, 0.55), inset 0 2px 3px rgba(255,255,255,0.08);
+      }
+
+      .ball.lightning .bolt {
+        position: absolute;
+        inset: 14% 12%;
+        border-radius: 50%;
+        opacity: 0.9;
+        background:
+          linear-gradient(155deg, transparent 44%, rgba(148, 93, 255, 0.4) 45%, rgba(148, 93, 255, 0.4) 53%, transparent 54%),
+          linear-gradient(25deg, transparent 58%, rgba(148, 93, 255, 0.6) 59%, rgba(148, 93, 255, 0.6) 66%, transparent 67%);
+      }
+
+      .ball.crown {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.44), transparent 0 18%),
+          linear-gradient(145deg, #ffe94b, #ffbd00 52%, #b36c00);
+      }
+
+      .ball.crown::after {
+        content: "👑";
+        position: absolute;
+        inset: auto 0 7px;
+        width: 100%;
+        height: auto;
+        text-align: center;
+        background: none;
+        font-size: 22px;
+        line-height: 1;
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+      }
+
+      .ball.rainbow {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.48), transparent 0 18%),
+          conic-gradient(from 20deg, #ff4e80, #ff9d00, #ffe559, #42e57f, #39baff, #8a64ff, #ff4e80);
+      }
+
+      .ball-roll {
+        animation: roll 1.35s cubic-bezier(.2,.82,.18,1) forwards;
+      }
+
+      @keyframes roll {
+        0% { filter: saturate(1.12) brightness(1.03); }
+        100% { filter: saturate(1.2) brightness(1.1); }
+      }
+
+      .impact {
+        position: absolute;
+        inset: auto 0 12%;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        z-index: 5;
+      }
+
+      .burst {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 16px;
+        background: rgba(8, 11, 28, 0.82);
+        border: 2px solid rgba(255, 255, 255, 0.28);
+        box-shadow: 0 0 24px rgba(255, 101, 213, 0.35);
+        color: #ffefba;
+        font-size: clamp(24px, 4vw, 54px);
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+
+      .burst.show {
+        animation: burst 1.05s ease-out;
+      }
+
+      @keyframes burst {
+        0% { opacity: 0; transform: translate(-50%, -20%) scale(0.76); }
+        12% { opacity: 1; }
+        55% { opacity: 1; transform: translate(-50%, -54%) scale(1.03); }
+        100% { opacity: 0; transform: translate(-50%, -72%) scale(1.08); }
+      }
+
+      .side {
+        display: grid;
+        gap: 12px;
+      }
+
+      .panel,
+      .scoreboard,
+      .effects {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .panel,
+      .scoreboard,
+      .effects {
+        padding: 14px;
+      }
+
+      .panel h3,
+      .scoreboard h3,
+      .effects h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      .ball-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .ball-card {
+        position: relative;
+        padding: 12px;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(15, 22, 68, 0.76));
+        text-align: left;
+        overflow: hidden;
+      }
+
+      .ball-card.selected {
+        border-color: rgba(255, 211, 92, 0.75);
+        box-shadow: 0 0 0 3px rgba(255,211,92,0.12), 0 10px 20px rgba(0,0,0,0.22);
+      }
+
+      .ball-card .mini {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 8px;
+        box-shadow: inset 0 10px 18px rgba(255,255,255,0.28), inset -10px -12px 22px rgba(0,0,0,0.22), 0 10px 16px rgba(0,0,0,0.26);
+      }
+
+      .ball-card strong {
+        display: block;
+        font-size: 18px;
+      }
+
+      .ball-card small {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .stat-bars {
+        display: grid;
+        gap: 5px;
+        margin-top: 10px;
+      }
+
+      .stat-row {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 8px;
+        align-items: center;
+        color: #dbe6ff;
+        font-size: 12px;
+      }
+
+      .bar {
+        position: relative;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.08);
+        overflow: hidden;
+      }
+
+      .bar span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #ff5d7d, #ffb95b, #72e88a, #63dcff);
+      }
+
+      .controls {
+        display: grid;
+        gap: 12px;
+      }
+
+      .control-group {
+        padding: 12px;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.06);
+      }
+
+      .control-group label {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: baseline;
+        margin-bottom: 8px;
+        color: #ffe896;
+        font-weight: 900;
+      }
+
+      .control-group input[type="range"] {
+        width: 100%;
+      }
+
+      .hint {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .power-meter {
+        height: 20px;
+        margin-top: 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.08);
+        overflow: hidden;
+      }
+
+      .power-meter span {
+        display: block;
+        height: 100%;
+        width: 60%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #66d8ff, #70eb9e, #ffe85b, #ff8f43, #ff5e72);
+      }
+
+      .control-buttons {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 10px;
+      }
+
+      .control-buttons button,
+      .mini-btn {
+        min-height: 48px;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #ff78d2, #8b2ae2);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.12);
+        font-weight: 900;
+      }
+
+      .mini-btn.secondary {
+        background: linear-gradient(180deg, #57d7ff, #2c60ea);
+      }
+
+      .scoreboard-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .frame {
+        min-height: 88px;
+        padding: 10px 8px;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 10px;
+        background: rgba(255,255,255,0.06);
+      }
+
+      .frame.active {
+        border-color: rgba(255,211,92,0.82);
+        background: rgba(255,211,92,0.1);
+      }
+
+      .frame span {
+        display: block;
+      }
+
+      .frame .label {
+        color: #ffe896;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .frame .rolls {
+        min-height: 28px;
+        margin-top: 8px;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+
+      .frame .total {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .effects-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .effect-card {
+        min-height: 118px;
+        padding: 10px;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.06);
+      }
+
+      .effect-card strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--gold);
+      }
+
+      .effect-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .result-card {
+        display: none;
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 14px;
+        background:
+          radial-gradient(circle at 18% 20%, rgba(255,211,92,0.18), transparent 28%),
+          linear-gradient(180deg, rgba(255,255,255,0.08), rgba(9, 13, 40, 0.88));
+        padding: 14px;
+      }
+
+      .result-card.show {
+        display: grid;
+        gap: 8px;
+      }
+
+      .result-card strong {
+        font-size: 22px;
+        color: #ffefb0;
+      }
+
+      .result-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      @media (max-width: 1240px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .lane-shell {
+          min-height: 640px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        main {
+          padding: 10px;
+        }
+
+        .hud {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .effects-grid,
+        .ball-grid,
+        .scoreboard-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .lane-shell {
+          min-height: 560px;
+          padding-top: 78px;
+        }
+
+        .lane {
+          height: 520px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .topbar {
+          padding: 10px 12px;
+        }
+
+        .brand strong {
+          font-size: 16px;
+        }
+
+        .brand span {
+          display: none;
+        }
+
+        .lane-shell {
+          min-height: 500px;
+          padding: 70px 8px 18px;
+        }
+
+        .lane {
+          width: 92%;
+          height: 470px;
+          bottom: 18px;
+        }
+
+        .pin {
+          width: 30px;
+          height: 58px;
+        }
+
+        .ball {
+          width: 64px;
+          height: 64px;
+        }
+
+        .control-buttons {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark">🎳</span>
+        <div>
+          <strong>保齡球</strong>
+          <span>2.5D 可愛球館 · 10 局制</span>
+        </div>
+      </div>
+      <a class="back" href="index.html">← 回到大廳</a>
+    </header>
+
+    <main>
+      <div class="shell">
+        <section class="stage">
+          <div class="hud">
+            <div class="hud-card"><span>目前第幾局</span><strong id="frameLabel">1</strong></div>
+            <div class="hud-card"><span>目前第幾球</span><strong id="ballLabel">1</strong></div>
+            <div class="hud-card"><span>總分</span><strong id="scoreLabel">0</strong></div>
+            <div class="hud-card badge"><span>狀態</span><strong id="stateLabel">READY</strong></div>
+          </div>
+
+          <div class="arena">
+            <div class="neon-sign">BOWLING</div>
+            <div class="lane-shell">
+              <div class="lane-base" aria-hidden="true"></div>
+              <div class="lane" id="lane">
+                <div class="lane-markers" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <div class="pins" id="pins"></div>
+                <div class="impact" id="impact">
+                  <div class="burst" id="burst">READY</div>
+                </div>
+                <div class="ball fire" id="ball" aria-label="保齡球">
+                  <span class="hole"></span>
+                  <span class="bolt" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <section class="panel">
+            <h3>保齡球種類</h3>
+            <div class="ball-grid" id="ballGrid"></div>
+          </section>
+
+          <section class="panel controls">
+            <h3>投球控制</h3>
+            <div class="control-group">
+              <label>左右位置 <span id="positionValue">0</span></label>
+              <input id="positionSlider" type="range" min="-24" max="24" value="0" />
+              <div class="hint">左邊會偏向左溝，右邊會偏向右溝，中間最穩。</div>
+            </div>
+            <div class="control-group">
+              <label>方向角度 <span id="angleValue">0</span>°</label>
+              <input id="angleSlider" type="range" min="-12" max="12" value="0" />
+              <div class="hint">角度越大越容易切球，但也更容易失準。</div>
+            </div>
+            <div class="control-group">
+              <label>力道大小 <span id="powerValue">68</span>%</label>
+              <input id="powerSlider" type="range" min="20" max="100" value="68" />
+              <div class="power-meter"><span id="powerFill"></span></div>
+              <div class="hint">65 到 75 通常最容易打出穩定成績。</div>
+            </div>
+            <div class="control-buttons">
+              <button id="throwBtn" type="button">投球</button>
+              <button class="mini-btn secondary" id="resetBtn" type="button">重新開始</button>
+            </div>
+          </section>
+
+          <section class="scoreboard">
+            <h3>局數看板</h3>
+            <div class="scoreboard-grid" id="scoreboard"></div>
+          </section>
+
+          <section class="effects">
+            <h3>球種說明</h3>
+            <div class="effects-grid">
+              <article class="effect-card"><strong>直線加速</strong><p>火焰球速度感最強，適合大力衝擊，視覺最爆。</p></article>
+              <article class="effect-card"><strong>減速穩定</strong><p>冰晶球控制最好，適合新手穩穩瞄準中間。</p></article>
+              <article class="effect-card"><strong>隨機曲線</strong><p>閃電球帶點變化，會有較明顯的彎球手感。</p></article>
+              <article class="effect-card"><strong>全能型</strong><p>冠軍球平衡度最高，推進和穩定度都不錯。</p></article>
+              <article class="effect-card"><strong>隨機效果</strong><p>彩虹球最花俏，偶爾會有意外驚喜，也可能偏掉。</p></article>
+            </div>
+          </section>
+
+          <section class="result-card" id="resultCard">
+            <strong id="resultTitle">遊戲結束</strong>
+            <p id="resultText">你的總分會顯示在這裡。</p>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const ballTypes = [
+        {
+          id: "fire",
+          name: "火焰球",
+          note: "充滿熱情的火焰能量，適合大力直球。",
+          control: 0.82,
+          power: 1.08,
+          curve: 0.4,
+          value: [92, 82, 34],
+        },
+        {
+          id: "ice",
+          name: "冰晶球",
+          note: "穩定度高，適合慢慢抓準角度。",
+          control: 1.1,
+          power: 0.92,
+          curve: 0.2,
+          value: [58, 78, 90],
+        },
+        {
+          id: "lightning",
+          name: "閃電球",
+          note: "曲線變化明顯，常有漂亮的切角。",
+          control: 0.94,
+          power: 1.0,
+          curve: 1.08,
+          value: [82, 54, 110],
+        },
+        {
+          id: "crown",
+          name: "冠軍球",
+          note: "全能型平衡球，任何力道都能駕馭。",
+          control: 1.02,
+          power: 1.0,
+          curve: 0.7,
+          value: [74, 72, 76],
+        },
+        {
+          id: "rainbow",
+          name: "彩虹球",
+          note: "外型最華麗，手感也最有驚喜感。",
+          control: 0.9,
+          power: 1.03,
+          curve: 0.95,
+          value: [88, 76, 84],
+        },
+      ];
+
+      const pinLayout = [
+        { x: 50, y: 16, tilt: 0 },
+        { x: 46, y: 26, tilt: -12 },
+        { x: 54, y: 26, tilt: 12 },
+        { x: 42, y: 36, tilt: -18 },
+        { x: 50, y: 36, tilt: 0 },
+        { x: 58, y: 36, tilt: 18 },
+        { x: 38, y: 46, tilt: -22 },
+        { x: 46, y: 46, tilt: -8 },
+        { x: 54, y: 46, tilt: 8 },
+        { x: 62, y: 46, tilt: 22 },
+      ];
+
+      const state = {
+        ballType: "fire",
+        position: 0,
+        angle: 0,
+        power: 68,
+        frameIndex: 0,
+        frames: Array.from({ length: 10 }, () => ({ rolls: [], total: null, result: "" })),
+        pinsStanding: Array(10).fill(true),
+        busy: false,
+        finished: false,
+        bestStrikeStreak: 0,
+        strikeStreak: 0,
+        audioReady: false,
+      };
+
+      const ballEl = document.getElementById("ball");
+      const laneEl = document.getElementById("lane");
+      const pinsEl = document.getElementById("pins");
+      const scoreboardEl = document.getElementById("scoreboard");
+      const burstEl = document.getElementById("burst");
+      const resultCard = document.getElementById("resultCard");
+      const resultTitle = document.getElementById("resultTitle");
+      const resultText = document.getElementById("resultText");
+      const frameLabel = document.getElementById("frameLabel");
+      const ballLabel = document.getElementById("ballLabel");
+      const scoreLabel = document.getElementById("scoreLabel");
+      const stateLabel = document.getElementById("stateLabel");
+      const positionSlider = document.getElementById("positionSlider");
+      const angleSlider = document.getElementById("angleSlider");
+      const powerSlider = document.getElementById("powerSlider");
+      const positionValue = document.getElementById("positionValue");
+      const angleValue = document.getElementById("angleValue");
+      const powerValue = document.getElementById("powerValue");
+      const powerFill = document.getElementById("powerFill");
+      const throwBtn = document.getElementById("throwBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const ballGrid = document.getElementById("ballGrid");
+
+      let audioContext = null;
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function rand(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function init() {
+        renderBallGallery();
+        renderPins();
+        renderScoreboard();
+        bindEvents();
+        syncControls();
+        updateUI("READY");
+      }
+
+      function bindEvents() {
+        positionSlider.addEventListener("input", () => {
+          state.position = Number(positionSlider.value);
+          syncControls();
+          updateBallPosition();
+        });
+        angleSlider.addEventListener("input", () => {
+          state.angle = Number(angleSlider.value);
+          syncControls();
+          updateBallPosition();
+        });
+        powerSlider.addEventListener("input", () => {
+          state.power = Number(powerSlider.value);
+          syncControls();
+        });
+        throwBtn.addEventListener("click", () => {
+          playClick();
+          throwBall();
+        });
+        resetBtn.addEventListener("click", () => {
+          playClick();
+          resetGame();
+        });
+      }
+
+      function renderBallGallery() {
+        ballGrid.innerHTML = "";
+        ballTypes.forEach((ball) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `ball-card ${ball.id === state.ballType ? "selected" : ""}`;
+          button.innerHTML = `
+            <div class="ball ${ball.id} mini"><span class="hole"></span>${ball.id === "lightning" ? '<span class="bolt" aria-hidden="true"></span>' : ""}</div>
+            <strong>${ball.name}</strong>
+            <small>${ball.note}</small>
+            <div class="stat-bars">
+              <div class="stat-row"><span>力道</span><div class="bar"><span style="width:${ball.value[0]}%"></span></div></div>
+              <div class="stat-row"><span>控制</span><div class="bar"><span style="width:${ball.value[1]}%"></span></div></div>
+              <div class="stat-row"><span>曲線</span><div class="bar"><span style="width:${ball.value[2]}%"></span></div></div>
+            </div>
+          `;
+          button.addEventListener("click", () => {
+            state.ballType = ball.id;
+            renderBallGallery();
+            updateBallVisual();
+            playClick();
+          });
+          ballGrid.appendChild(button);
+        });
+      }
+
+      function renderPins() {
+        pinsEl.innerHTML = "";
+        pinLayout.forEach((pin, index) => {
+          const el = document.createElement("div");
+          el.className = "pin";
+          el.dataset.index = index;
+          el.style.left = `${pin.x}%`;
+          el.style.top = `${pin.y}%`;
+          el.style.setProperty("--tilt", `${pin.tilt}deg`);
+          pinsEl.appendChild(el);
+        });
+      }
+
+      function resetGame() {
+        state.position = 0;
+        state.angle = 0;
+        state.power = 68;
+        state.frameIndex = 0;
+        state.frames = Array.from({ length: 10 }, () => ({ rolls: [], total: null, result: "" }));
+        state.pinsStanding = Array(10).fill(true);
+        state.busy = false;
+        state.finished = false;
+        state.bestStrikeStreak = 0;
+        state.strikeStreak = 0;
+        state.ballType = "fire";
+        positionSlider.value = "0";
+        angleSlider.value = "0";
+        powerSlider.value = "68";
+        renderBallGallery();
+        syncControls();
+        renderPins();
+        renderScoreboard();
+        updateBallVisual();
+        updateUI("READY");
+        hideResultCard();
+      }
+
+      function syncControls() {
+        positionValue.textContent = state.position;
+        angleValue.textContent = state.angle;
+        powerValue.textContent = state.power;
+        powerFill.style.width = `${state.power}%`;
+      }
+
+      function updateBallVisual() {
+        ballEl.className = `ball ${state.ballType}`;
+        ballEl.innerHTML = '<span class="hole"></span>' + (state.ballType === "lightning" ? '<span class="bolt" aria-hidden="true"></span>' : "");
+        updateBallPosition();
+      }
+
+      function updateBallPosition() {
+        const laneRect = laneEl.getBoundingClientRect();
+        const x = laneRect.width * (0.5 + state.position / 180) + state.angle * 1.2;
+        const y = laneRect.height * 0.82;
+        ballEl.style.left = `${x}px`;
+        ballEl.style.top = `${y}px`;
+        ballEl.style.transform = `translate(-50%, -50%) rotate(${state.position * 2 + state.angle * 4}deg)`;
+      }
+
+      function updateUI(label) {
+        frameLabel.textContent = Math.min(state.frameIndex + 1, 10);
+        ballLabel.textContent = currentThrowNumber();
+        scoreLabel.textContent = calculateScore();
+        stateLabel.textContent = label;
+        throwBtn.disabled = state.busy || state.finished;
+        renderScoreboard();
+      }
+
+      function currentThrowNumber() {
+        if (state.finished) return "完局";
+        const frame = state.frames[state.frameIndex];
+        if (!frame) return "完局";
+        return frame.rolls.length + 1;
+      }
+
+      function renderScoreboard() {
+        scoreboardEl.innerHTML = "";
+        const totals = calculateFrameTotals();
+        state.frames.forEach((frame, index) => {
+          const card = document.createElement("div");
+          card.className = `frame ${index === state.frameIndex && !state.finished ? "active" : ""}`;
+          const rolls = formatRolls(frame.rolls, index);
+          const total = totals[index] == null ? "—" : totals[index];
+          card.innerHTML = `
+            <span class="label">第 ${index + 1} 局</span>
+            <span class="rolls">${rolls}</span>
+            <span class="total">${frame.result || " "} ${total === "—" ? "" : `· ${total}`}</span>
+          `;
+          scoreboardEl.appendChild(card);
+        });
+      }
+
+      function formatRolls(rolls, frameIndex) {
+        if (!rolls.length) return "· ·";
+        if (frameIndex < 9) {
+          if (rolls[0] === 10) return "X";
+          if (rolls.length === 1) return `${displayRoll(rolls[0])} ·`;
+          const second = rolls[0] + rolls[1] === 10 ? "/" : displayRoll(rolls[1]);
+          return `${displayRoll(rolls[0])} ${second}`;
+        }
+        return rolls.map((roll) => (roll === 10 ? "X" : displayRoll(roll))).join(" ");
+      }
+
+      function displayRoll(value) {
+        if (value === 0) return "-";
+        return String(value);
+      }
+
+      function calculateFrameTotals() {
+        const rolls = state.frames.flatMap((frame) => frame.rolls);
+        const totals = [];
+        let rollIndex = 0;
+        let total = 0;
+        for (let frame = 0; frame < 10; frame += 1) {
+          if (rollIndex >= rolls.length) break;
+          const first = rolls[rollIndex];
+          if (frame < 9) {
+            const second = rolls[rollIndex + 1];
+            if (first === 10) {
+              const bonus1 = rolls[rollIndex + 1];
+              const bonus2 = rolls[rollIndex + 2];
+              if (bonus1 == null || bonus2 == null) break;
+              total += 10 + bonus1 + bonus2;
+              totals.push(total);
+              rollIndex += 1;
+              continue;
+            }
+            if (second == null) break;
+            if (first + second === 10) {
+              const bonus = rolls[rollIndex + 2];
+              if (bonus == null) break;
+              total += 10 + bonus;
+            } else {
+              total += first + second;
+            }
+            totals.push(total);
+            rollIndex += 2;
+            continue;
+          }
+          const firstTenth = rolls[rollIndex];
+          const secondTenth = rolls[rollIndex + 1];
+          const thirdTenth = rolls[rollIndex + 2];
+          if (secondTenth == null) break;
+          if (firstTenth === 10 || firstTenth + secondTenth === 10) {
+            if (thirdTenth == null) break;
+            total += firstTenth + secondTenth + thirdTenth;
+          } else {
+            total += firstTenth + secondTenth;
+          }
+          totals.push(total);
+          break;
+        }
+        while (totals.length < 10) totals.push(null);
+        return totals;
+      }
+
+      function calculateScore() {
+        const totals = calculateFrameTotals();
+        const last = totals.filter((value) => value != null).pop();
+        return last == null ? 0 : last;
+      }
+
+      function setPinsStanding(values) {
+        state.pinsStanding = values.slice();
+        const pins = [...pinsEl.querySelectorAll(".pin")];
+        pins.forEach((pin, index) => {
+          pin.classList.toggle("down", !state.pinsStanding[index]);
+        });
+      }
+
+      function pickPinsToKnock(count, targetX) {
+        const standing = state.pinsStanding
+          .map((standing, index) => standing ? { index, pin: pinLayout[index] } : null)
+          .filter(Boolean);
+        standing.sort((a, b) => {
+          const aScore = Math.abs(a.pin.x - targetX) + a.pin.y * 0.45 + Math.random() * 0.4;
+          const bScore = Math.abs(b.pin.x - targetX) + b.pin.y * 0.45 + Math.random() * 0.4;
+          return aScore - bScore;
+        });
+        return standing.slice(0, count).map((entry) => entry.index);
+      }
+
+      function computeKnocks() {
+        const currentStanding = state.pinsStanding.filter(Boolean).length;
+        const type = ballTypes.find((item) => item.id === state.ballType) || ballTypes[0];
+        const centerScore = 1 - Math.min(1, Math.abs(state.position) / 24);
+        const angleScore = 1 - Math.min(1, Math.abs(state.angle) / 12);
+        const powerSweet = 1 - Math.min(1, Math.abs(state.power - 68) / 32);
+        const control = clamp((centerScore * 0.4 + angleScore * 0.25 + powerSweet * 0.35) * type.control, 0, 1);
+        const powerBoost = clamp((state.power - 20) / 80 * type.power, 0, 1.3);
+        let min = 0;
+        let max = 4;
+        if (control > 0.88) { min = 8; max = 10; }
+        else if (control > 0.72) { min = 6; max = 9; }
+        else if (control > 0.56) { min = 4; max = 8; }
+        else if (control > 0.38) { min = 2; max = 6; }
+        let knocked = rand(min, max);
+        knocked += Math.round(powerBoost * 1.2);
+        if (type.id === "lightning" && Math.random() < 0.2) knocked += 1;
+        if (type.id === "rainbow") knocked += rand(-1, 2);
+        if (type.id === "ice") knocked = Math.max(0, knocked - 1);
+        if (state.power < 35) knocked = Math.max(0, knocked - 2);
+        if (state.power > 92) knocked = Math.max(0, knocked - rand(0, 2));
+        if (control > 0.94 && state.power >= 60 && Math.abs(state.position) <= 4 && Math.abs(state.angle) <= 2) knocked = currentStanding;
+        knocked = clamp(knocked, 0, currentStanding);
+        return knocked;
+      }
+
+      async function throwBall() {
+        if (state.busy || state.finished) return;
+        state.busy = true;
+        updateUI("ROLL");
+        playRollLoop();
+
+        const targetX = 50 + state.position * 0.7 + state.angle * 0.8;
+        const laneRect = laneEl.getBoundingClientRect();
+        const start = { x: laneRect.width * 0.5 + state.position * 4, y: laneRect.height * 0.82 };
+        const end = { x: laneRect.width * (targetX / 100), y: laneRect.height * 0.18 };
+        const curve = state.angle * 2.4 + ballTypes.find((ball) => ball.id === state.ballType)?.curve * 0.8;
+        ballEl.classList.remove("ball-roll");
+        void ballEl.offsetWidth;
+        ballEl.classList.add("ball-roll");
+
+        const knocked = computeKnocks();
+        const hitIndices = pickPinsToKnock(knocked, targetX);
+        await animateBall(start, end, 1350, curve);
+        settlePins(hitIndices);
+      }
+
+      function animateBall(start, end, duration, curve) {
+        return new Promise((resolve) => {
+          const startTime = performance.now();
+          const loop = (now) => {
+            const t = clamp((now - startTime) / duration, 0, 1);
+            const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            const x = lerp(start.x, end.x, eased) + Math.sin(t * Math.PI) * curve;
+            const y = lerp(start.y, end.y, eased) - Math.sin(t * Math.PI) * 44;
+            const rot = t * 1150 * (state.power / 100);
+            const scale = 1 - t * 0.12;
+            ballEl.style.left = `${x}px`;
+            ballEl.style.top = `${y}px`;
+            ballEl.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`;
+            if (t < 1) {
+              requestAnimationFrame(loop);
+            } else {
+              resolve();
+            }
+          };
+          requestAnimationFrame(loop);
+        });
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function settlePins(hitIndices) {
+        const pins = [...pinsEl.querySelectorAll(".pin")];
+        hitIndices.forEach((index, order) => {
+          const pin = pins[index];
+          if (!pin) return;
+          setTimeout(() => {
+            pin.classList.add("down");
+          }, 70 + order * 40);
+        });
+
+        const frame = state.frames[state.frameIndex];
+        const knocked = hitIndices.length;
+        frame.rolls.push(knocked);
+
+        const strike = state.frameIndex < 9 && frame.rolls.length === 1 && knocked === 10;
+        const spare = state.frameIndex < 9 && frame.rolls.length === 2 && frame.rolls[0] + frame.rolls[1] === 10;
+        const tenthStrike = state.frameIndex === 9 && frame.rolls.length === 1 && knocked === 10;
+        const tenthStrikeBonus = state.frameIndex === 9 && frame.rolls.length === 2 && frame.rolls[0] === 10;
+        const tenthSpareBonus = state.frameIndex === 9 && frame.rolls.length === 2 && frame.rolls[0] + frame.rolls[1] === 10;
+
+        if (strike) {
+          frame.result = "STRIKE";
+          updateCombo(true);
+          showBurst("STRIKE!");
+          queueNextFrameReset();
+        } else if (spare) {
+          frame.result = "SPARE";
+          updateCombo(false, true);
+          showBurst("SPARE!");
+          queueNextFrameReset();
+        } else if (state.frameIndex < 9 && frame.rolls.length === 2) {
+          frame.result = "OPEN";
+          updateCombo(false, false);
+          showBurst("Nice Shot!");
+          queueNextFrameReset();
+        } else if (tenthStrike) {
+          frame.result = "BONUS";
+          updateCombo(true);
+          showBurst("STRIKE!");
+          queueTenthBonusReset();
+        } else if (tenthStrikeBonus) {
+          frame.result = "BONUS";
+          if (knocked === 10) {
+            updateCombo(true);
+            showBurst("STRIKE!");
+          } else {
+            updateCombo(false, false);
+            showBurst("Nice Shot!");
+          }
+          queueTenthBonusReset();
+        } else if (tenthSpareBonus) {
+          frame.result = "BONUS";
+          updateCombo(false, true);
+          showBurst("SPARE!");
+          queueTenthBonusReset();
+        } else if (state.frameIndex === 9 && frame.rolls.length === 2) {
+          frame.result = "FINAL";
+          updateCombo(false, false);
+          showBurst("Nice Shot!");
+          finishGame();
+          return;
+        } else if (state.frameIndex === 9 && frame.rolls.length === 3) {
+          frame.result = "FINAL";
+          updateCombo(false, false);
+          showBurst("Nice Shot!");
+          finishGame();
+          return;
+        } else {
+          showBurst("Nice Shot!");
+        }
+
+        refreshStanding();
+        updateScoreAfterShot();
+      }
+
+      function updateCombo(strike, spare = false) {
+        if (strike) {
+          state.strikeStreak += 1;
+          state.bestStrikeStreak = Math.max(state.bestStrikeStreak, state.strikeStreak);
+        } else if (spare) {
+          state.strikeStreak = 0;
+        } else {
+          state.strikeStreak = 0;
+        }
+      }
+
+      function queueNextFrameReset() {
+        setTimeout(() => {
+          if (state.finished) return;
+          state.frameIndex += 1;
+          state.pinsStanding = Array(10).fill(true);
+          renderPins();
+          state.busy = false;
+          updateUI(state.frameIndex >= 9 ? "FINAL" : "READY");
+          updateBallPosition();
+          if (state.frameIndex >= 10) finishGame();
+        }, 900);
+      }
+
+      function queueTenthBonusReset() {
+        setTimeout(() => {
+          if (state.finished) return;
+          state.pinsStanding = Array(10).fill(true);
+          renderPins();
+          state.busy = false;
+          updateUI("BONUS");
+          updateBallPosition();
+        }, 900);
+      }
+
+      function refreshStanding() {
+        const pins = [...pinsEl.querySelectorAll(".pin")];
+        pins.forEach((pin, index) => {
+          pin.classList.toggle("down", !state.pinsStanding[index]);
+        });
+      }
+
+      function updateScoreAfterShot() {
+        scoreLabel.textContent = calculateScore();
+        renderScoreboard();
+      }
+
+      function showBurst(text) {
+        burstEl.textContent = text;
+        burstEl.classList.remove("show");
+        void burstEl.offsetWidth;
+        burstEl.classList.add("show");
+        stateLabel.textContent = text;
+        if (text === "STRIKE!") playStrike();
+        else if (text === "SPARE!") playSpare();
+        else playHit();
+      }
+
+      function hideResultCard() {
+        resultCard.classList.remove("show");
+      }
+
+      function finishGame() {
+        state.finished = true;
+        state.busy = false;
+        updateUI("GAME OVER");
+        const total = calculateScore();
+        const evaluation = total <= 50 ? "新手上路" : total <= 100 ? "穩定發揮" : total <= 150 ? "保齡球高手" : "冠軍玩家";
+        resultTitle.textContent = `總分 ${total}`;
+        resultText.textContent = `最高連續 Strike：${state.bestStrikeStreak}，評價：${evaluation}。`;
+        resultCard.classList.add("show");
+      }
+
+      function playClick() {
+        ensureAudio();
+        const now = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(840, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.05);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      }
+
+      function playRollLoop() {
+        ensureAudio();
+        const now = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(64, now);
+        osc.frequency.exponentialRampToValueAtTime(86, now + 0.4);
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.55);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(now);
+        osc.stop(now + 0.55);
+      }
+
+      function playHit() {
+        ensureAudio();
+        const now = audioContext.currentTime;
+        [120, 182, 240].forEach((freq, index) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(freq, now + index * 0.02);
+          gain.gain.setValueAtTime(0.07, now + index * 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12 + index * 0.03);
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.start(now + index * 0.02);
+          osc.stop(now + 0.15 + index * 0.03);
+        });
+      }
+
+      function playStrike() {
+        ensureAudio();
+        const now = audioContext.currentTime;
+        [440, 554, 659].forEach((freq, index) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, now + index * 0.06);
+          gain.gain.setValueAtTime(0.07, now + index * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22 + index * 0.05);
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.start(now + index * 0.06);
+          osc.stop(now + 0.24 + index * 0.05);
+        });
+      }
+
+      function playSpare() {
+        ensureAudio();
+        const now = audioContext.currentTime;
+        [330, 392].forEach((freq, index) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + index * 0.08);
+          gain.gain.setValueAtTime(0.06, now + index * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24 + index * 0.05);
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.start(now + index * 0.08);
+          osc.stop(now + 0.26 + index * 0.05);
+        });
+      }
+
+      function ensureAudio() {
+        if (audioContext) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        audioContext = new AudioContext();
+      }
+
+      updateBallVisual();
+      init();
+      resetGame();
+      window.addEventListener("resize", updateBallPosition);
+    </script>
+  </body>
+</html>
