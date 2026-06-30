@@ -147,14 +147,28 @@
       }
 
       .char-face {
-        display: inline-grid;
-        place-items: center;
-        width: 58px;
-        height: 58px;
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / .72;
         margin-bottom: 10px;
         border-radius: 18px;
-        background: var(--char-bg, linear-gradient(145deg, #ffca68, #ff719d));
-        font-size: 34px;
+        background-image: url("assets/monopoly-characters.png");
+        background-repeat: no-repeat;
+        background-size: 400% 200%;
+        background-position: var(--avatar-pos);
+        box-shadow: inset 0 3px 0 rgba(255,255,255,.25), 0 8px 18px rgba(0,0,0,.28);
+      }
+
+      .char-full {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1.45;
+        margin-top: 10px;
+        border-radius: 8px;
+        background-image: url("assets/monopoly-characters.png");
+        background-repeat: no-repeat;
+        background-size: 400% 200%;
+        background-position: var(--full-pos);
         box-shadow: inset 0 3px 0 rgba(255,255,255,.25), 0 8px 18px rgba(0,0,0,.28);
       }
 
@@ -365,15 +379,49 @@
       }
 
       .player-avatar {
-        display: grid;
-        place-items: center;
+        display: block;
         width: 52px;
         height: 52px;
         border-radius: 16px;
-        background: var(--token-color);
-        color: #0b0d24;
-        font-size: 29px;
-        font-weight: 900;
+        background-image: url("assets/monopoly-characters.png");
+        background-repeat: no-repeat;
+        background-size: 400% 200%;
+        background-position: var(--avatar-pos);
+        box-shadow: inset 0 2px 0 rgba(255,255,255,.26), 0 5px 14px rgba(0,0,0,.3);
+      }
+
+      .chance-card {
+        display: none;
+        width: min(310px, 100%);
+        padding: 14px;
+        border: 2px solid rgba(255,255,255,.24);
+        border-radius: 16px;
+        background:
+          radial-gradient(circle at 82% 10%, rgba(255, 216, 107, .38), transparent 28%),
+          linear-gradient(150deg, rgba(255, 105, 201, .28), rgba(28, 25, 86, .94));
+        box-shadow: 0 14px 28px rgba(0,0,0,.35), 0 0 24px rgba(255, 105, 201, .24);
+      }
+
+      .chance-card.show {
+        display: grid;
+        gap: 8px;
+        animation: cardPop .22s ease-out;
+      }
+
+      .chance-card strong {
+        color: var(--gold);
+        font-size: clamp(18px, 4vw, 26px);
+      }
+
+      .chance-card p {
+        margin: 0;
+        color: #f6ecff;
+        line-height: 1.55;
+      }
+
+      @keyframes cardPop {
+        from { opacity: 0; transform: translateY(10px) scale(.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       .player-card h3 {
@@ -578,6 +626,10 @@
               </div>
               <div class="dice-display" id="diceDisplay">?</div>
               <button class="primary-action" id="rollBtn" type="button">擲骰子</button>
+              <div class="chance-card" id="chanceCard">
+                <strong id="chanceTitle">命運 / 機會</strong>
+                <p id="chanceText">踩到命運或機會時會抽一張事件牌。</p>
+              </div>
             </div>
           </div>
         </div>
@@ -628,10 +680,10 @@
       const money = (value) => `${value.toLocaleString("zh-TW")} 萬`;
 
       const characters = [
-        { id: "axel", name: "Axel / 艾克索", icon: "🦁", color: "#ffcf5a", bg: "linear-gradient(145deg,#ffe782,#ff8b4f)" },
-        { id: "selena", name: "Selena / 賽蓮娜", icon: "🦊", color: "#ff84ca", bg: "linear-gradient(145deg,#ffc7ee,#ff6aa9)" },
-        { id: "kai", name: "Kai / 凱", icon: "🐲", color: "#66e2ff", bg: "linear-gradient(145deg,#a8f1ff,#497cff)" },
-        { id: "mia", name: "Mia / 米亞", icon: "🐰", color: "#7df0a3", bg: "linear-gradient(145deg,#d4ffc8,#44c971)" },
+        { id: "axel", name: "Axel / 艾克索", icon: "A", color: "#4fa4ff", avatarPos: "0 0", fullPos: "0 100%" },
+        { id: "selena", name: "Selena / 賽蓮娜", icon: "S", color: "#ff84a8", avatarPos: "33.333% 0", fullPos: "33.333% 100%" },
+        { id: "kai", name: "Kai / 凱", icon: "K", color: "#75c96a", avatarPos: "66.666% 0", fullPos: "66.666% 100%" },
+        { id: "mia", name: "Mia / 米亞", icon: "M", color: "#ffc847", avatarPos: "100% 0", fullPos: "100% 100%" },
       ];
 
       const landKinds = {
@@ -712,6 +764,8 @@
         lastDice: "?",
         pendingAction: false,
         winner: null,
+        chanceCard: null,
+        marketCrash: 0,
       };
 
       const setupView = document.getElementById("setupView");
@@ -732,6 +786,32 @@
       const targetSelect = document.getElementById("targetSelect");
       const tileInfo = document.getElementById("tileInfo");
       const eventLog = document.getElementById("eventLog");
+      const chanceCard = document.getElementById("chanceCard");
+      const chanceTitle = document.getElementById("chanceTitle");
+      const chanceText = document.getElementById("chanceText");
+
+      const chanceEvents = [
+        { title: "🎉 中樂透", rarity: "good", text: "獲得獎金 +3000 萬。", run: (player) => gainMoney(player, 3000, "中樂透") },
+        { title: "📈 股票大漲", rarity: "good", text: "投資成功，獲得 +5000 萬。", run: (player) => gainMoney(player, 5000, "股票大漲") },
+        { title: "🏛 政府補助", rarity: "good", text: "因城市發展優良，獲得補助 +2000 萬。", run: (player) => gainMoney(player, 2000, "獲得政府補助") },
+        { title: "🔥 建築失火", rarity: "bad", text: "隨機一棟建築降級一階。", run: (player) => damageRandomBuilding(player, "建築失火") },
+        { title: "🌎 大地震", rarity: "bad", text: "所有玩家損失資金 -1000 萬。", run: () => state.players.filter(p => !p.bankrupt).forEach(p => payBank(p, 1000, "受到大地震影響")) },
+        { title: "🏥 生病住院", rarity: "bad", text: "玩家進入醫院，停留 1 回合。", run: (player) => { player.hospital = Math.max(player.hospital, 1); log(`${player.name} 生病住院 1 回合。`); } },
+        { title: "🕵 商業間諜", rarity: "good", text: "隨機偷取一位玩家 1000 萬。", run: (player) => stealFromRandomPlayer(player, 1000) },
+        { title: "🛡 國防升級", rarity: "rare", text: "免費獲得一次防護罩，可抵擋一次武器攻擊。", run: (player) => { player.shields += 1; log(`${player.name} 獲得 1 次防護罩。`); } },
+        { title: "🔬 科技突破", rarity: "good", text: "目前研究中的武器研發時間減少 2 回合。", run: (player) => { if (player.research) { player.research.left = Math.max(0, player.research.left - 2); log(`${player.name} 科技突破，研究時間減少 2 回合。`); updateResearch(player); } else log(`${player.name} 科技突破，但目前沒有研究中武器。`); } },
+        { title: "💸 稅務稽查", rarity: "bad", text: "補繳稅金 -3000 萬。", run: (player) => payBank(player, 3000, "遭稅務稽查") },
+        { title: "🚁 無人機失控", rarity: "bad", text: "自己的無人機故障，損失 500 萬維修費。", run: (player) => payBank(player, 500, "無人機維修") },
+        { title: "☢ 核能外洩", rarity: "rare", text: "研究院發生事故，研究院停工 3 回合。", run: (player) => { player.labShutdown = 3; log(`${player.name} 研究院停工 3 回合。`); } },
+        { title: "🏦 銀行低利貸款", rarity: "good", text: "借款 5000 萬，10 回合後償還 6000 萬。", run: (player) => { player.money += 5000; player.loans.push({ left: 10, amount: 6000 }); log(`${player.name} 向銀行借款 ${money(5000)}，10 回合後還 ${money(6000)}。`); } },
+        { title: "🤝 商業合作", rarity: "rare", text: "隨機與一位玩家結盟 5 回合，期間互不攻擊。", run: (player) => makeAlliance(player) },
+        { title: "🎯 精準情報", rarity: "rare", text: "獲得敵方所有武器、資金與土地資訊。", run: (player) => revealIntel(player) },
+        { title: "🚨 防空系統啟動", rarity: "rare", text: "未來 3 回合內，不會受到飛彈或導彈攻擊。", run: (player) => { player.antiAir = 3; log(`${player.name} 啟動防空系統 3 回合。`); } },
+        { title: "🏆 世界首富獎勵", rarity: "good", text: "若目前資產排名第一，額外獲得 +2000 萬。", run: (player) => { if (richestEnemy() && totalAssets(player) >= Math.max(...state.players.filter(p => !p.bankrupt).map(totalAssets))) gainMoney(player, 2000, "獲得世界首富獎勵"); else log(`${player.name} 尚未排名第一，沒有獎勵。`); } },
+        { title: "🏚 房市崩盤", rarity: "bad", text: "所有飯店與商辦大樓收入減半，持續 5 回合。", run: () => { state.marketCrash = 5; log("房市崩盤，飯店與商辦大樓租金減半 5 回合。"); } },
+        { title: "🌟 神秘寶箱", rarity: "rare", text: "隨機獲得現金、武器、防護罩或免費升級。", run: (player) => openMysteryBox(player) },
+        { title: "🎅 慈善捐款日", rarity: "bad", text: "所有玩家捐出總資產的 5%。", run: () => state.players.filter(p => !p.bankrupt).forEach(p => payBank(p, Math.max(100, Math.floor(totalAssets(p) * .05)), "慈善捐款")) },
+      ];
 
       function initSetup() {
         const grid = document.getElementById("characterGrid");
@@ -740,8 +820,9 @@
           const button = document.createElement("button");
           button.type = "button";
           button.className = `character-card ${character.id === state.selectedCharacter ? "selected" : ""}`;
-          button.style.setProperty("--char-bg", character.bg);
-          button.innerHTML = `<span class="char-face">${character.icon}</span><strong>${character.name}</strong><span>玩家角色。其餘 3 位會由 AI 控制。</span>`;
+          button.style.setProperty("--avatar-pos", character.avatarPos);
+          button.style.setProperty("--full-pos", character.fullPos);
+          button.innerHTML = `<span class="char-face"></span><strong>${character.name}</strong><span>玩家角色。其餘 3 位會由 AI 控制。</span><span class="char-full"></span>`;
           button.addEventListener("click", () => {
             state.selectedCharacter = character.id;
             initSetup();
@@ -770,6 +851,11 @@
           jail: 0,
           research: null,
           weapons: [],
+          shields: 0,
+          antiAir: 0,
+          labShutdown: 0,
+          loans: [],
+          alliances: {},
         }));
       }
 
@@ -782,11 +868,14 @@
         state.lastDice = "?";
         state.pendingAction = false;
         state.winner = null;
+        state.chanceCard = null;
+        state.marketCrash = 0;
         eventLog.innerHTML = "";
         setupView.style.display = "none";
         gameView.classList.add("active");
         log("遊戲開始，每位玩家獲得 5000 萬。");
         render();
+        scheduleAITurn();
       }
 
       function tileClass(tile) {
@@ -831,8 +920,9 @@
         state.players.forEach((player, index) => {
           const card = document.createElement("article");
           card.className = `player-card ${index === state.current ? "active" : ""} ${player.bankrupt ? "bankrupt" : ""}`;
+          card.style.setProperty("--avatar-pos", player.avatarPos);
           card.innerHTML = `
-            <span class="player-avatar" style="--token-color:${player.color}">${player.icon}</span>
+            <span class="player-avatar"></span>
             <div>
               <h3>${player.name}${player.isHuman ? "（你）" : "（AI）"}</h3>
               <div class="stat-line">
@@ -840,6 +930,9 @@
                 <span class="pill">位置 ${boardTiles[player.position].name}</span>
                 <span class="pill">土地 ${ownedLands(index).length}</span>
                 <span class="pill">武器 ${player.weapons.length}</span>
+                ${player.shields ? `<span class="pill">防護罩 ${player.shields}</span>` : ""}
+                ${player.antiAir ? `<span class="pill">防空 ${player.antiAir}</span>` : ""}
+                ${player.labShutdown ? `<span class="pill">停工 ${player.labShutdown}</span>` : ""}
                 ${player.hospital ? `<span class="pill">住院 ${player.hospital}</span>` : ""}
                 ${player.jail ? `<span class="pill">監獄 ${player.jail}</span>` : ""}
                 ${player.research ? `<span class="pill">研究 ${weaponDefs[player.research.type].label} ${player.research.left}</span>` : ""}
@@ -892,6 +985,17 @@
         roundLabel.textContent = `第 ${state.round} 輪`;
         renderWeaponSelect();
         renderTargetSelect();
+        renderChanceCard();
+      }
+
+      function renderChanceCard() {
+        if (!state.chanceCard) {
+          chanceCard.classList.remove("show");
+          return;
+        }
+        chanceTitle.textContent = state.chanceCard.title;
+        chanceText.textContent = state.chanceCard.text;
+        chanceCard.classList.add("show");
       }
 
       function renderWeaponSelect() {
@@ -983,6 +1087,7 @@
       function rollDice() {
         const player = currentPlayer();
         if (!player || player.bankrupt || state.phase !== "ready") return;
+        state.chanceCard = null;
         startTurnMaintenance(player);
         if (state.phase !== "moving") return;
         const dice = Math.floor(Math.random() * 6) + 1;
@@ -992,10 +1097,11 @@
         state.pendingAction = player.isHuman && !player.bankrupt;
         state.phase = player.isHuman ? "action" : "ai-action";
         render();
-        if (!player.isHuman) setTimeout(aiAfterLanding, 450);
+        if (!player.isHuman) setTimeout(aiAfterLanding, 700);
       }
 
       function startTurnMaintenance(player) {
+        tickPlayerEffects(player);
         updateResearch(player);
         if (player.hospital > 0) {
           player.hospital -= 1;
@@ -1014,6 +1120,20 @@
           return;
         }
         state.phase = "moving";
+      }
+
+      function tickPlayerEffects(player) {
+        if (player.antiAir > 0) player.antiAir -= 1;
+        if (player.labShutdown > 0) player.labShutdown -= 1;
+        Object.keys(player.alliances).forEach((key) => {
+          player.alliances[key] -= 1;
+          if (player.alliances[key] <= 0) delete player.alliances[key];
+        });
+        player.loans.forEach((loan) => { loan.left -= 1; });
+        const dueLoans = player.loans.filter((loan) => loan.left <= 0);
+        player.loans = player.loans.filter((loan) => loan.left > 0);
+        dueLoans.forEach((loan) => payBank(player, loan.amount, "償還銀行貸款"));
+        if (state.marketCrash > 0 && state.current === 0) state.marketCrash -= 1;
       }
 
       function movePlayer(player, steps) {
@@ -1062,10 +1182,11 @@
           log(`${tile.name} 的持有者無法收租。`);
           return;
         }
-        const toll = tolls[tile.level];
+        const discounted = state.marketCrash > 0 && (tile.level === 4 || tile.level === 6);
+        const toll = discounted ? Math.floor(tolls[tile.level] / 2) : tolls[tile.level];
         player.money -= toll;
         owner.money += toll;
-        log(`${player.name} 支付 ${money(toll)} 過路費給 ${owner.name}。`);
+        log(`${player.name} 支付 ${money(toll)} 過路費給 ${owner.name}${discounted ? "（房市崩盤減半）" : ""}。`);
       }
 
       function gainMoney(player, amount, reason) {
@@ -1078,17 +1199,75 @@
         log(`${player.name} ${reason}，支付 ${money(amount)}。`);
       }
 
-      function drawChance(player) {
-        const events = [
-          () => gainMoney(player, 3000, "中樂透"),
-          () => gainMoney(player, 5000, "獲得政府補助"),
-          () => gainMoney(player, 10000, "股票大漲"),
-          () => damageRandomBuilding(player, "火災"),
-          () => payBank(player, 5000, "遇到地震損失"),
-          () => payBank(player, 3000, "被稅務稽查罰款"),
-          () => { player.hospital = Math.max(player.hospital, 1); log(`${player.name} 生病住院 1 回合。`); },
+      function stealFromRandomPlayer(player, amount) {
+        const targets = state.players.filter(target => target !== player && !target.bankrupt && target.money > 0);
+        if (!targets.length) {
+          log(`${player.name} 發動商業間諜，但沒有可偷取的對象。`);
+          return;
+        }
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        const stolen = Math.min(amount, target.money);
+        target.money -= stolen;
+        player.money += stolen;
+        log(`${player.name} 從 ${target.name} 偷取 ${money(stolen)}。`);
+      }
+
+      function makeAlliance(player) {
+        const targets = state.players.filter(target => target !== player && !target.bankrupt);
+        if (!targets.length) return;
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        const playerIndex = state.players.indexOf(player);
+        const targetIndex = state.players.indexOf(target);
+        player.alliances[targetIndex] = 5;
+        target.alliances[playerIndex] = 5;
+        log(`${player.name} 與 ${target.name} 商業合作 5 回合，期間互不攻擊。`);
+      }
+
+      function revealIntel(player) {
+        const reports = state.players
+          .filter(target => target !== player && !target.bankrupt)
+          .map(target => `${target.name}：資金 ${money(target.money)}、土地 ${ownedLands(state.players.indexOf(target)).length}、武器 ${target.weapons.map(id => weaponDefs[id].label).join("、") || "無"}`)
+          .join("；");
+        log(`${player.name} 獲得精準情報：${reports}`);
+      }
+
+      function openMysteryBox(player) {
+        const rewards = [
+          () => gainMoney(player, 1000, "開啟神秘寶箱"),
+          () => { player.weapons.push("missile"); log(`${player.name} 從神秘寶箱獲得導彈。`); },
+          () => { player.weapons.push("drone"); log(`${player.name} 從神秘寶箱獲得無人機。`); },
+          () => { player.shields += 1; log(`${player.name} 從神秘寶箱獲得防護罩。`); },
+          () => freeUpgradeRandomLand(player),
         ];
-        events[Math.floor(Math.random() * events.length)]();
+        rewards[Math.floor(Math.random() * rewards.length)]();
+      }
+
+      function freeUpgradeRandomLand(player) {
+        const lands = ownedLands(state.players.indexOf(player)).filter(tile => tile.level < 6);
+        if (!lands.length) {
+          log(`${player.name} 抽到免費升級，但沒有可升級建築。`);
+          return;
+        }
+        const tile = lands[Math.floor(Math.random() * lands.length)];
+        tile.level += 1;
+        log(`${player.name} 免費升級 ${tile.name} 為 ${buildingNames[tile.level]}。`);
+      }
+
+      function drawChance(player) {
+        const event = drawWeightedChance();
+        state.chanceCard = { title: event.title, text: event.text };
+        log(`${player.name} 抽到事件牌：${event.title}。${event.text}`);
+        event.run(player);
+      }
+
+      function drawWeightedChance() {
+        const roll = Math.random();
+        const pool = roll < .4
+          ? chanceEvents.filter(event => event.rarity === "good")
+          : roll < .8
+            ? chanceEvents.filter(event => event.rarity === "bad")
+            : chanceEvents.filter(event => event.rarity === "rare");
+        return pool[Math.floor(Math.random() * pool.length)];
       }
 
       function damageRandomBuilding(player, reason) {
@@ -1106,30 +1285,43 @@
         const player = currentPlayer();
         const tile = boardTiles[player.position];
         if (!canBuy(player, tile)) return;
+        purchaseLand(state.current, tile);
+        render();
+      }
+
+      function purchaseLand(playerIndex, tile) {
+        const player = state.players[playerIndex];
         const price = landKinds[tile.kind].price;
         player.money -= price;
-        tile.owner = state.current;
+        tile.owner = playerIndex;
         log(`${player.name} 購買 ${tile.name}，花費 ${money(price)}。`);
         checkBankruptcy(player);
-        render();
       }
 
       function upgradeLand() {
         const player = currentPlayer();
         const tile = boardTiles[player.position];
         if (!canUpgrade(player, tile)) return;
+        improveLand(player, tile);
+        render();
+      }
+
+      function improveLand(player, tile) {
         const cost = buildCosts[tile.level + 1];
         player.money -= cost;
         tile.level += 1;
         log(`${player.name} 將 ${tile.name} 升級為 ${buildingNames[tile.level]}，花費 ${money(cost)}。`);
         checkBankruptcy(player);
-        render();
       }
 
       function startResearch(type = weaponSelect.value) {
         const player = currentPlayer();
+        return beginResearch(player, type);
+      }
+
+      function beginResearch(player, type) {
         const weapon = weaponDefs[type];
-        if (!canStartResearch(player)) return false;
+        if (!currentPlayerHasResearchLab(player) || player.research || player.money < 1000 || player.labShutdown > 0) return false;
         if (type === "nuke" && !hasNukeCondition(player)) {
           if (player.isHuman) log("核彈需要 2 間研究院與 3 棟商辦大樓。");
           return false;
@@ -1150,6 +1342,7 @@
           const targetIndex = Number(validTarget?.split(":")[1]);
           const target = state.players[targetIndex];
           if (!target || target.bankrupt || targetIndex === state.current) return false;
+          if (!canAttackTarget(player, target, type)) return false;
           consumeWeapon(player, type);
           target.hospital = Math.max(target.hospital, 3);
           log(`${player.name} 使用無人機攻擊 ${target.name}，對方住院 3 回合。`);
@@ -1158,6 +1351,8 @@
           const tileIndex = Number(validTarget?.split(":")[1]);
           const tile = boardTiles[tileIndex];
           if (!tile || tile.type !== "land") return false;
+          const targetOwner = ownerOf(tile);
+          if (targetOwner && !canAttackTarget(player, targetOwner, type)) return false;
           consumeWeapon(player, type);
           if (type === "missile") {
             degradeTile(tile, `${player.name} 使用導彈攻擊 ${tile.name}`);
@@ -1186,6 +1381,25 @@
       function consumeWeapon(player, type) {
         const weaponIndex = player.weapons.indexOf(type);
         if (weaponIndex >= 0) player.weapons.splice(weaponIndex, 1);
+      }
+
+      function canAttackTarget(attacker, target, type) {
+        const attackerIndex = state.players.indexOf(attacker);
+        const targetIndex = state.players.indexOf(target);
+        if (target.alliances[attackerIndex] > 0 || attacker.alliances[targetIndex] > 0) {
+          log(`${attacker.name} 與 ${target.name} 正在結盟，不能攻擊。`);
+          return false;
+        }
+        if ((type === "missile" || type === "rocket") && target.antiAir > 0) {
+          log(`${target.name} 的防空系統攔截了攻擊。`);
+          return false;
+        }
+        if (target.shields > 0) {
+          target.shields -= 1;
+          log(`${target.name} 的防護罩抵擋了一次武器攻擊。`);
+          return false;
+        }
+        return true;
       }
 
       function degradeTile(tile, prefix) {
@@ -1234,7 +1448,15 @@
         state.phase = "ready";
         state.lastDice = "?";
         render();
-        if (!currentPlayer().isHuman) setTimeout(rollDice, 650);
+        scheduleAITurn();
+      }
+
+      function scheduleAITurn() {
+        const player = currentPlayer();
+        if (!player || player.isHuman || player.bankrupt || state.phase !== "ready") return;
+        setTimeout(() => {
+          if (currentPlayer() === player && state.phase === "ready") rollDice();
+        }, 650);
       }
 
       function aiAfterLanding() {
@@ -1242,11 +1464,12 @@
         if (!player || player.bankrupt) return endTurn();
         const tile = boardTiles[player.position];
         if (player.money >= 1000) {
-          if (tile.type === "land" && tile.owner === null && player.money >= landKinds[tile.kind].price) buyLand();
-          if (tile.type === "land" && tile.owner === state.current && tile.level < 6 && player.money >= buildCosts[tile.level + 1]) upgradeLand();
+          if (tile.type === "land" && tile.owner === null && player.money >= landKinds[tile.kind].price) purchaseLand(state.current, tile);
+          if (tile.type === "land" && tile.owner === state.current && tile.level < 6 && player.money >= buildCosts[tile.level + 1]) improveLand(player, tile);
           aiResearch(player);
         }
         aiAttack(player);
+        render();
         setTimeout(endTurn, 650);
       }
 
@@ -1255,7 +1478,7 @@
         const order = hasNukeCondition(player) ? ["nuke", "rocket", "missile", "drone"] : ["rocket", "missile", "drone"];
         for (const type of order) {
           if (player.money >= weaponDefs[type].cost) {
-            startResearch(type);
+            beginResearch(player, type);
             return;
           }
         }
