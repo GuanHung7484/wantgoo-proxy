@@ -131,8 +131,8 @@
       }
 
       .character-card {
-        min-height: 170px;
-        padding: 14px;
+        min-height: 150px;
+        padding: 12px;
         border: 2px solid rgba(255,255,255,.12);
         border-radius: 8px;
         background: linear-gradient(155deg, rgba(255,255,255,.12), rgba(19, 24, 78, .82));
@@ -148,10 +148,10 @@
 
       .char-face {
         display: block;
-        width: 100%;
-        aspect-ratio: 1 / .72;
-        margin-bottom: 10px;
-        border-radius: 18px;
+        width: min(100%, 148px);
+        aspect-ratio: 1;
+        margin: 0 auto 10px;
+        border-radius: 20px;
         background-image: url("assets/monopoly-characters.png");
         background-repeat: no-repeat;
         background-size: 400% 200%;
@@ -161,9 +161,9 @@
 
       .char-full {
         display: block;
-        width: 100%;
+        width: min(100%, 130px);
         aspect-ratio: 1 / 1.45;
-        margin-top: 10px;
+        margin: 10px auto 0;
         border-radius: 8px;
         background-image: url("assets/monopoly-characters.png");
         background-repeat: no-repeat;
@@ -174,7 +174,7 @@
 
       .character-card strong {
         display: block;
-        font-size: 22px;
+        font-size: 19px;
       }
 
       .character-card span {
@@ -224,15 +224,36 @@
       }
 
       .board-wrap {
-        padding: 12px;
+        position: relative;
+        padding: clamp(12px, 2vw, 22px);
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 18% 16%, rgba(255,255,255,.16), transparent 16%),
+          radial-gradient(circle at 80% 84%, rgba(32, 13, 4, .38), transparent 32%),
+          linear-gradient(135deg, #7b431d, #3b1d11 48%, #9b6131);
+        box-shadow:
+          inset 0 0 0 5px rgba(255, 205, 111, .3),
+          inset 0 0 32px rgba(0,0,0,.38),
+          0 22px 44px rgba(0,0,0,.36);
       }
 
       .board {
         display: grid;
         grid-template-columns: repeat(11, minmax(44px, 1fr));
         grid-template-rows: repeat(11, minmax(44px, 1fr));
-        gap: 5px;
+        gap: 6px;
         aspect-ratio: 1;
+        padding: 12px;
+        border: 8px solid rgba(255, 214, 113, .82);
+        border-radius: 18px;
+        background:
+          radial-gradient(circle at 24% 22%, rgba(135, 232, 72, .55), transparent 18%),
+          radial-gradient(circle at 78% 22%, rgba(108, 214, 255, .38), transparent 16%),
+          linear-gradient(135deg, #83d85a 0 24%, #e7e9df 24% 28%, #71c94e 28% 52%, #d6d9ce 52% 56%, #59b74c 56% 100%);
+        box-shadow:
+          inset 0 0 0 4px rgba(255,255,255,.45),
+          inset 0 0 34px rgba(31, 89, 26, .45),
+          0 20px 30px rgba(0,0,0,.35);
       }
 
       .tile {
@@ -241,33 +262,51 @@
         align-content: space-between;
         min-width: 0;
         padding: 5px;
-        border: 1px solid rgba(255,255,255,.2);
-        border-radius: 8px;
+        border: 2px solid rgba(255,255,255,.68);
+        border-radius: 9px;
         background: rgba(255,255,255,.08);
+        color: #10213d;
         overflow: hidden;
+        box-shadow:
+          inset 0 2px 0 rgba(255,255,255,.75),
+          inset 0 -4px 0 rgba(0,0,0,.1),
+          0 5px 0 rgba(42, 29, 19, .35),
+          0 8px 14px rgba(0,0,0,.22);
+      }
+
+      .tile::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,.45), transparent 42%);
+        pointer-events: none;
       }
 
       .tile h3 {
+        position: relative;
         margin: 0;
-        font-size: clamp(10px, 1.1vw, 13px);
+        font-size: clamp(10px, 1vw, 13px);
         line-height: 1.15;
+        text-shadow: 0 1px 0 rgba(255,255,255,.55);
       }
 
       .tile small {
-        color: rgba(255,255,255,.72);
+        position: relative;
+        color: rgba(12, 22, 42, .72);
         font-size: 10px;
+        font-weight: 800;
       }
 
-      .tile.land-normal { background: linear-gradient(145deg, rgba(83, 216, 255, .22), rgba(33, 38, 108, .84)); }
-      .tile.land-business { background: linear-gradient(145deg, rgba(255, 216, 107, .26), rgba(80, 50, 118, .84)); }
-      .tile.land-tech { background: linear-gradient(145deg, rgba(109, 240, 161, .26), rgba(25, 72, 92, .84)); }
-      .tile.start { background: linear-gradient(145deg, #51e398, #166fb1); }
-      .tile.chance { background: linear-gradient(145deg, #ff78cc, #6b3bd9); }
-      .tile.tax { background: linear-gradient(145deg, #ff896f, #8f2548); }
-      .tile.hospital { background: linear-gradient(145deg, #f7f7ff, #4b8ee8); color: #191540; }
-      .tile.bank { background: linear-gradient(145deg, #ffd86b, #b87510); color: #2e1900; }
-      .tile.research { background: linear-gradient(145deg, #95f5ff, #3936b4); }
-      .tile.jail { background: linear-gradient(145deg, #9fa7ba, #303544); }
+      .tile.land-normal { background: linear-gradient(145deg, #bdf5ff, #68b8ff); }
+      .tile.land-business { background: linear-gradient(145deg, #ffe98d, #f59e32); }
+      .tile.land-tech { background: linear-gradient(145deg, #b6ffd3, #4fc889); }
+      .tile.start { background: linear-gradient(145deg, #70f2a3, #25a7dc); }
+      .tile.chance { background: linear-gradient(145deg, #ffc0ee, #bb61ff); color: #351252; }
+      .tile.tax { background: linear-gradient(145deg, #ff9b7d, #e84561); color: #fff8f3; }
+      .tile.hospital { background: linear-gradient(145deg, #ffffff, #82c6ff); color: #191540; }
+      .tile.bank { background: linear-gradient(145deg, #fff2a6, #ffbd30); color: #2e1900; }
+      .tile.research { background: linear-gradient(145deg, #c4fbff, #56a6ff); }
+      .tile.jail { background: linear-gradient(145deg, #e9edf7, #8895a8); color: #1d2430; }
 
       .tile.current {
         outline: 3px solid var(--gold);
@@ -284,6 +323,7 @@
       }
 
       .tokens {
+        position: relative;
         display: flex;
         flex-wrap: wrap;
         gap: 2px;
@@ -311,11 +351,15 @@
         justify-items: center;
         gap: 12px;
         padding: 18px;
-        border: 1px solid var(--line);
-        border-radius: 16px;
+        border: 3px solid rgba(255,255,255,.4);
+        border-radius: 22px;
         background:
-          radial-gradient(circle at 50% 16%, rgba(255, 216, 107, .25), transparent 30%),
-          linear-gradient(145deg, rgba(255,255,255,.08), rgba(21, 16, 58, .88));
+          radial-gradient(circle at 22% 20%, rgba(255, 255, 255, .24), transparent 28%),
+          radial-gradient(circle at 78% 78%, rgba(255, 216, 107, .22), transparent 32%),
+          linear-gradient(145deg, rgba(58, 44, 118, .94), rgba(30, 18, 72, .94));
+        box-shadow:
+          inset 0 2px 0 rgba(255,255,255,.24),
+          0 12px 24px rgba(0,0,0,.28);
         text-align: center;
       }
 
@@ -766,6 +810,7 @@
         winner: null,
         chanceCard: null,
         marketCrash: 0,
+        aiTimer: null,
       };
 
       const setupView = document.getElementById("setupView");
@@ -860,6 +905,7 @@
       }
 
       function startGame() {
+        clearAITurnTimer();
         resetTiles();
         createPlayers();
         state.current = 0;
@@ -870,6 +916,7 @@
         state.winner = null;
         state.chanceCard = null;
         state.marketCrash = 0;
+        state.aiTimer = null;
         eventLog.innerHTML = "";
         setupView.style.display = "none";
         gameView.classList.add("active");
@@ -1025,6 +1072,7 @@
         renderPlayers();
         renderTileInfo();
         renderControls();
+        scheduleAITurn();
       }
 
       function currentPlayer() {
@@ -1087,6 +1135,7 @@
       function rollDice() {
         const player = currentPlayer();
         if (!player || player.bankrupt || state.phase !== "ready") return;
+        clearAITurnTimer();
         state.chanceCard = null;
         startTurnMaintenance(player);
         if (state.phase !== "moving") return;
@@ -1454,9 +1503,20 @@
       function scheduleAITurn() {
         const player = currentPlayer();
         if (!player || player.isHuman || player.bankrupt || state.phase !== "ready") return;
-        setTimeout(() => {
-          if (currentPlayer() === player && state.phase === "ready") rollDice();
-        }, 650);
+        if (state.aiTimer) return;
+        state.aiTimer = setTimeout(() => {
+          state.aiTimer = null;
+          if (currentPlayer() === player && state.phase === "ready") {
+            log(`${player.name} 自動擲骰。`);
+            rollDice();
+          }
+        }, 550);
+      }
+
+      function clearAITurnTimer() {
+        if (!state.aiTimer) return;
+        clearTimeout(state.aiTimer);
+        state.aiTimer = null;
       }
 
       function aiAfterLanding() {
