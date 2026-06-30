@@ -13,6 +13,11 @@ const AI_CONFIG = {
   boss:         { name:'魔王級', icon:'👹' }
 };
 
+function playerAvatar(name) {
+  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
+}
+
 // 玩家位置：[0]=你(下), [1]=香吉士(右), [2]=索隆(上), [3]=娜美(左)
 const AREA_IDS  = ['bt-bottom','bt-right','bt-top','bt-left'];
 const POSITIONS = ['bottom','right','top','left'];
@@ -420,7 +425,6 @@ function renderPlayer(idx) {
   const isActive = !gameOver && idx === currentTurn;
   const isBtm    = pos === 'bottom';
   const diffLbl  = p.isHuman ? '' : ` [${cfg.name}${cfg.icon}]`;
-  const icon     = p.isHuman ? '🧑' : '🤖';
 
   let cardsHTML = '';
 
@@ -452,7 +456,7 @@ function renderPlayer(idx) {
   area.innerHTML = `
     <div class="bt-player-box ${isActive?'bt-active':''} ${finished && finishOrder.indexOf(idx)===players.length-1?'bt-out':''}">
       <div class="bt-player-label">
-        ${icon} ${p.name}${diffLbl}
+        ${playerAvatar(p.name)}<span class="player-name">${p.name}</span>${diffLbl}
         <span class="bt-cnt">(${p.hand.length}張)</span>
         ${rankBadgeHTML(idx)}
       </div>

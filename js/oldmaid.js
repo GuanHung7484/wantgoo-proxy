@@ -13,6 +13,11 @@ const AI_CONFIG = {
   boss:         { name: '魔王級', icon: '👹', jokerDetect: 0.80, bluff: 0.4  }
 };
 
+function playerAvatar(name) {
+  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
+}
+
 // 玩家位置對應（索引 → 方位）
 // players[0]=你(下), players[1]=香吉士(右), players[2]=索隆(上), players[3]=娜美(左)
 const AREA_IDS    = ['area-bottom', 'area-right', 'area-top', 'area-left'];
@@ -170,14 +175,13 @@ function renderPlayerToArea(playerIdx) {
   }
 
   const pairsHTML = p.pairs.map(v => `<span class="mini-pair">${v}</span>`).join('');
-  const icon      = p.isHuman ? '🧑' : '🤖';
   const diffLabel = p.isHuman ? '' : ` [${cfg.name}${cfg.icon}]`;
   const outLabel  = p.isOut ? ' ✅' : '';
   const countLabel = `(${p.hand.length}張)${outLabel}`;
 
   areaEl.innerHTML = `
     <div class="om-player-box ${isActive ? 'om-active' : ''} ${p.isOut ? 'om-out' : ''}">
-      <div class="om-player-label">${icon} ${p.name}${diffLabel}
+      <div class="om-player-label">${playerAvatar(p.name)}<span class="player-name">${p.name}</span>${diffLabel}
         <span class="om-count">${countLabel}</span>
       </div>
       ${cardsHTML}

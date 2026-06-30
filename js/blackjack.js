@@ -13,6 +13,11 @@ const AI_CONFIG = {
   boss:         { standOn: 17, bustChance: 0,    name: '魔王級', icon: '👹', peeks: true }
 };
 
+function playerAvatar(name) {
+  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
+}
+
 // 位置定義：上(莊家)→右→下→左
 const POS_LABELS = ['上方', '右方', '下方', '左方'];
 const POS_KEYS   = ['top', 'right', 'bottom', 'left'];
@@ -118,14 +123,13 @@ function renderAll() {
       resultHTML = `<span class="result-badge ${cls}">${txt}</span>`;
     }
 
-    const icon = p.isHuman ? '🧑' : '🤖';
     const roleLabel = isDealer ? '👑莊家' : '閒家';
     const diffLabel = p.isHuman ? '' : ` [${cfg.name}${cfg.icon}]`;
 
     areaEl.innerHTML = `
       <div class="bj-player-box ${isActive ? 'bj-active' : ''} ${isDealer ? 'bj-dealer-box' : ''} ${p.status === 'bust' ? 'bj-bust' : ''}">
         <div class="bj-player-label">
-          ${icon} ${p.name}${diffLabel}
+          ${playerAvatar(p.name)}<span class="player-name">${p.name}</span>${diffLabel}
           <span class="bj-role">${roleLabel}</span>
           <span class="bj-score">${scoreText}</span>
           ${statusHTML} ${resultHTML}
@@ -216,7 +220,7 @@ async function startDicePhase() {
   for (const p of participants) {
     const row = document.createElement('div');
     row.className = 'dice-row';
-    row.innerHTML = `<span class="dice-name">${p.isHuman ? '🧑' : '🤖'} ${p.name}</span>
+    row.innerHTML = `<span class="dice-name">${playerAvatar(p.name)}<span class="player-name">${p.name}</span></span>
                      <span class="dice-value dice-rolling">🎲</span>`;
     diceResults.appendChild(row);
 

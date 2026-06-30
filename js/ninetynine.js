@@ -11,6 +11,11 @@ const AI_CFG = {
   boss:         { name:'魔王級', icon:'👹', rnd:2,  saveFn:28 }
 };
 
+function playerAvatar(name) {
+  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
+}
+
 // 位置對應（依人數變化）
 function posMap(count) {
   if (count === 2) return ['bottom','top'];
@@ -144,7 +149,6 @@ function renderPlayer(idx, areaId) {
   const pos = posMap(playerCount)[idx];
   const cfg = AI_CFG[difficulty];
   const isActive = phase === 'idle' && idx === curIdx && !p.eliminated;
-  const icon = p.isHuman ? '🧑' : '🤖';
   const diff = p.isHuman ? '' : ` [${cfg.name}${cfg.icon}]`;
   const elimLabel = p.eliminated ? ' ❌ 淘汰' : '';
   const isSmall = pos === 'left' || pos === 'right';
@@ -184,7 +188,7 @@ function renderPlayer(idx, areaId) {
 
   el.innerHTML = `
     <div class="nn-pbox ${isActive?'nn-active':''} ${p.eliminated?'nn-elim':''}">
-      <div class="nn-plabel">${icon} ${p.name}${diff}
+      <div class="nn-plabel">${playerAvatar(p.name)}<span class="player-name">${p.name}</span>${diff}
         <span class="nn-cnt">(${p.hand.length}張)${elimLabel}</span>
       </div>
       ${cardsHTML}
