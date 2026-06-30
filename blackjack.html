@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2a1060">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="21點">
+  <link rel="manifest" href="manifest.json">
+  <title>21點 — 小型遊樂場</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 標題列 -->
+  <div class="game-header">
+    <h1>🃏 21點</h1>
+    <a href="index.html">← 回到大廳</a>
+  </div>
+
+  <!-- 設定畫面 -->
+  <div class="setup-screen" id="setup-screen">
+    <h2>遊戲設定</h2>
+
+    <h3>選擇 AI 難度</h3>
+    <div class="setup-grid" id="diff-grid">
+      <button class="setup-btn beginner" data-level="beginner">
+        <div class="sb-icon">😊</div>
+        <div class="sb-name">初學者</div>
+        <div class="sb-desc">AI 容易犯錯，14 點就停牌</div>
+      </button>
+      <button class="setup-btn intermediate" data-level="intermediate">
+        <div class="sb-icon">🧐</div>
+        <div class="sb-name">中級</div>
+        <div class="sb-desc">AI 16 點停牌，偶爾失誤</div>
+      </button>
+      <button class="setup-btn advanced" data-level="advanced">
+        <div class="sb-icon">😈</div>
+        <div class="sb-name">高級</div>
+        <div class="sb-desc">標準策略，17 點停牌</div>
+      </button>
+      <button class="setup-btn boss" data-level="boss">
+        <div class="sb-icon">👹</div>
+        <div class="sb-name">魔王級</div>
+        <div class="sb-desc">會偷看牌面，知道何時冒險</div>
+      </button>
+    </div>
+
+    <h3>選擇遊戲人數（含自己）</h3>
+    <div class="count-grid" id="count-grid">
+      <button class="setup-btn" data-count="2">
+        <div class="sb-icon">👤</div>
+        <div class="sb-name">2 人</div>
+        <div class="sb-desc">你 + 香吉士</div>
+      </button>
+      <button class="setup-btn" data-count="3">
+        <div class="sb-icon">👥</div>
+        <div class="sb-name">3 人</div>
+        <div class="sb-desc">你 + 香吉士 + 索隆</div>
+      </button>
+      <button class="setup-btn" data-count="4">
+        <div class="sb-icon">👥</div>
+        <div class="sb-name">4 人</div>
+        <div class="sb-desc">你 + 香吉士 + 索隆 + 娜美</div>
+      </button>
+    </div>
+
+    <button class="btn-start" id="btn-start-game" disabled>開始遊戲</button>
+  </div>
+
+  <!-- 遊戲桌面 -->
+  <div class="game-table" id="game-table">
+    <!-- 計分板 -->
+    <div class="scoreboard">
+      <strong>你的戰績</strong>
+      <div class="scores">
+        <div class="score-item">勝 <span id="score-win">0</span></div>
+        <div class="score-item">負 <span id="score-lose">0</span></div>
+        <div class="score-item">平 <span id="score-draw">0</span></div>
+      </div>
+    </div>
+
+    <!-- 骰子畫面 -->
+    <div class="dice-screen" id="dice-screen">
+      <h2 class="dice-title">🎲 擲骰子決定莊家！</h2>
+      <div id="dice-results" class="dice-results"></div>
+      <div id="dice-seats" class="dice-seats"></div>
+    </div>
+
+    <!-- 四方位牌桌 -->
+    <div class="bj-table-wrap" id="bj-table" style="display:none">
+      <div class="bj-top" id="bj-top"></div>
+      <div class="bj-left" id="bj-left"></div>
+      <div class="bj-center" id="bj-center">
+        <div class="message" id="message"></div>
+      </div>
+      <div class="bj-right" id="bj-right"></div>
+      <div class="bj-bottom" id="bj-bottom"></div>
+    </div>
+
+    <!-- 操作按鈕 -->
+    <div class="action-bar" id="action-bar" style="display:none">
+      <button class="btn btn-hit" id="btn-hit" disabled>補牌</button>
+      <button class="btn btn-stand" id="btn-stand" disabled>停牌</button>
+      <button class="btn btn-double" id="btn-double" disabled>加倍</button>
+      <button class="btn btn-new" id="btn-new" style="display:none">再來一局</button>
+    </div>
+    <div class="action-bar" style="margin-top:8px">
+      <button class="btn btn-secondary" id="btn-back">更換設定</button>
+    </div>
+  </div>
+
+  <script src="js/blackjack.js"></script>
+</body>
+</html>

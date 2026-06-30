@@ -1,0 +1,46 @@
+{
+  "name": "小型遊樂場",
+  "short_name": "遊樂場",
+  "description": "21點、抽鬼牌、九九 — AI 對戰卡牌遊戲",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a0533",
+  "theme_color": "#2a1060",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "21點",
+      "short_name": "21點",
+      "url": "./blackjack.html",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "抽鬼牌",
+      "short_name": "抽鬼牌",
+      "url": "./oldmaid.html",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "九九",
+      "short_name": "九九",
+      "url": "./ninetynine.html",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "大老二",
+      "short_name": "大老二",
+      "url": "./bigtwo.html",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

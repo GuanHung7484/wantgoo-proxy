@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0f0c29"/>
+      <stop offset="50%"  stop-color="#302b63"/>
+      <stop offset="100%" stop-color="#24243e"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#f7971e"/>
+      <stop offset="100%" stop-color="#ffd200"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景 -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- 外框裝飾 -->
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="none" stroke="url(#gold)" stroke-width="6" opacity="0.5"/>
+  <!-- 撲克牌符號 ♠ -->
+  <text x="256" y="200" font-size="160" text-anchor="middle" fill="#fff" opacity="0.9">♠</text>
+  <!-- 標題文字 -->
+  <text x="256" y="340" font-size="72" font-weight="900" text-anchor="middle" font-family="sans-serif" fill="url(#gold)">遊樂場</text>
+  <!-- 底部小字 -->
+  <text x="256" y="400" font-size="36" text-anchor="middle" font-family="sans-serif" fill="rgba(255,255,255,0.5)">♥ ♦ ♣ ♠</text>
+</svg>

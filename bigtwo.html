@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2a1060">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="大老二">
+  <link rel="manifest" href="manifest.json">
+  <title>大老二 — 小型遊樂場</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 標題列 -->
+  <div class="game-header">
+    <h1>🂡 大老二</h1>
+    <a href="index.html">← 回到大廳</a>
+  </div>
+
+  <!-- 設定畫面 -->
+  <div class="setup-screen" id="setup-screen">
+    <h2>遊戲設定</h2>
+
+    <h3>選擇 AI 難度</h3>
+    <div class="setup-grid" id="diff-grid">
+      <button class="setup-btn beginner" data-level="beginner">
+        <div class="sb-icon">😊</div>
+        <div class="sb-name">初學者</div>
+        <div class="sb-desc">隨機出牌，愛亂跳過</div>
+      </button>
+      <button class="setup-btn intermediate" data-level="intermediate">
+        <div class="sb-icon">🧐</div>
+        <div class="sb-name">中級</div>
+        <div class="sb-desc">基本策略，懂得留 2</div>
+      </button>
+      <button class="setup-btn advanced" data-level="advanced">
+        <div class="sb-icon">😈</div>
+        <div class="sb-name">高級</div>
+        <div class="sb-desc">善用組合，精算手牌</div>
+      </button>
+      <button class="setup-btn boss" data-level="boss">
+        <div class="sb-icon">👹</div>
+        <div class="sb-name">魔王級</div>
+        <div class="sb-desc">完美策略，幾乎無解</div>
+      </button>
+    </div>
+
+    <h3>選擇遊戲人數（含自己）</h3>
+    <div class="count-grid" id="count-grid">
+      <button class="setup-btn" data-count="2">
+        <div class="sb-icon">👤</div>
+        <div class="sb-name">2 人</div>
+        <div class="sb-desc">你 + 香吉士</div>
+      </button>
+      <button class="setup-btn" data-count="3">
+        <div class="sb-icon">👥</div>
+        <div class="sb-name">3 人</div>
+        <div class="sb-desc">你 + 香吉士 + 索隆</div>
+      </button>
+      <button class="setup-btn" data-count="4">
+        <div class="sb-icon">👥</div>
+        <div class="sb-name">4 人</div>
+        <div class="sb-desc">你 + 香吉士 + 索隆 + 娜美</div>
+      </button>
+    </div>
+
+    <button class="btn-start" id="btn-start-game" disabled>開始遊戲</button>
+  </div>
+
+  <!-- 遊戲桌面 -->
+  <div class="game-table" id="game-table">
+    <!-- 計分板 -->
+    <div class="scoreboard">
+      <strong>戰績（勝局）</strong>
+      <div class="scores" id="scoreboard-content"></div>
+    </div>
+
+    <!-- 四方位牌桌 -->
+    <div class="bt-table-wrap">
+
+      <!-- 上方 AI2（索隆） -->
+      <div class="bt-top" id="bt-top"></div>
+
+      <!-- 左方 AI3（娜美） -->
+      <div class="bt-left" id="bt-left"></div>
+
+      <!-- 中央 -->
+      <div class="bt-center" id="bt-center">
+        <div id="bt-turn-indicator" class="turn-indicator"></div>
+        <div id="bt-play-label" class="bt-play-label"></div>
+        <div id="bt-last-play" class="bt-last-play"></div>
+        <div id="message" class="message"></div>
+        <div class="action-bar" style="margin-top:8px">
+          <button class="btn btn-new" id="btn-new" style="display:none">再來一局</button>
+        </div>
+      </div>
+
+      <!-- 右方 AI1（香吉士） -->
+      <div class="bt-right" id="bt-right"></div>
+
+      <!-- 下方 玩家（你） -->
+      <div class="bt-bottom" id="bt-bottom"></div>
+    </div>
+
+    <!-- 出牌 / 跳過 按鈕 -->
+    <div class="action-bar" id="bt-actions" style="margin-top:10px; display:none">
+      <button class="btn btn-hit" id="btn-play">出牌</button>
+      <button class="btn btn-stand" id="btn-pass">跳過</button>
+    </div>
+
+    <!-- 快捷牌型按鈕 -->
+    <div class="action-bar" id="bt-shortcuts" style="margin-top:8px; display:none">
+      <button class="btn btn-draw" id="btn-pair" title="一對：同花不計">🎴 一對</button>
+      <button class="btn btn-draw" id="btn-triple" title="三條">🎴 三條</button>
+      <button class="btn btn-draw" id="btn-straight" title="五張順子">🎴 順子</button>
+      <button class="btn btn-draw" id="btn-full" title="葫蘆：三條+對子">🎴 葫蘆</button>
+      <button class="btn btn-draw" id="btn-four" title="鐵支：四條+1">🎴 鐵支</button>
+      <button class="btn btn-draw" id="btn-sf" title="同花順">🎴 同花順</button>
+    </div>
+    <div class="action-bar" style="margin-top:8px">
+      <button class="btn btn-secondary" id="btn-back">更換設定</button>
+    </div>
+  </div>
+
+  <script src="js/bigtwo.js"></script>
+</body>
+</html>

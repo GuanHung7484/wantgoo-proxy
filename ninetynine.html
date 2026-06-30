@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2a1060">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="九九">
+  <link rel="manifest" href="manifest.json">
+  <title>九九 — 小型遊樂場</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="game-header">
+    <h1>🔥 九九</h1>
+    <a href="index.html">← 回到大廳</a>
+  </div>
+
+  <!-- 設定畫面 -->
+  <div class="setup-screen" id="setup-screen">
+    <h2>遊戲設定</h2>
+
+    <h3>選擇 AI 難度</h3>
+    <div class="setup-grid" id="diff-grid">
+      <button class="setup-btn beginner" data-level="beginner">
+        <div class="sb-icon">😊</div>
+        <div class="sb-name">初學者</div>
+        <div class="sb-desc">隨便出牌，不會保留功能牌</div>
+      </button>
+      <button class="setup-btn intermediate" data-level="intermediate">
+        <div class="sb-icon">🧐</div>
+        <div class="sb-name">中級</div>
+        <div class="sb-desc">基本策略，會保留一些功能牌</div>
+      </button>
+      <button class="setup-btn advanced" data-level="advanced">
+        <div class="sb-icon">😈</div>
+        <div class="sb-name">高級</div>
+        <div class="sb-desc">精打細算，關鍵時刻才出功能牌</div>
+      </button>
+      <button class="setup-btn boss" data-level="boss">
+        <div class="sb-icon">👹</div>
+        <div class="sb-name">魔王級</div>
+        <div class="sb-desc">最佳策略，專門針對你</div>
+      </button>
+    </div>
+
+    <h3>選擇遊戲人數（含自己）</h3>
+    <div class="count-grid" id="count-grid">
+      <button class="setup-btn" data-count="2">
+        <div class="sb-icon">👤</div>
+        <div class="sb-name">2 人</div>
+        <div class="sb-desc">你 + 香吉士</div>
+      </button>
+      <button class="setup-btn" data-count="3">
+        <div class="sb-icon">👥</div>
+        <div class="sb-name">3 人</div>
+        <div class="sb-desc">你 + 香吉士 + 索隆</div>
+      </button>
+      <button class="setup-btn" data-count="4">
+        <div class="sb-icon">👥</div>
+        <div class="sb-name">4 人</div>
+        <div class="sb-desc">你 + 香吉士 + 索隆 + 娜美</div>
+      </button>
+    </div>
+
+    <button class="btn-start" id="btn-start-game" disabled>開始遊戲</button>
+  </div>
+
+  <!-- 遊戲桌面 -->
+  <div class="game-table" id="game-table">
+    <div class="scoreboard">
+      <strong>戰績</strong>
+      <div class="scores" id="scoreboard-content"></div>
+    </div>
+
+    <div class="nn-table-wrap">
+      <div class="nn-top" id="nn-top"></div>
+      <div class="nn-left" id="nn-left"></div>
+      <div class="nn-center" id="nn-center">
+        <div class="nn-total" id="nn-total">0</div>
+        <div class="nn-direction" id="nn-direction">⟳ 順時針</div>
+        <div class="nn-pile-info" id="nn-pile-info">山: 0 張</div>
+        <div id="nn-last-card-wrap"></div>
+        <div class="message" id="message"></div>
+        <div class="nn-choice" id="nn-choice" style="display:none"></div>
+      </div>
+      <div class="nn-right" id="nn-right"></div>
+      <div class="nn-bottom" id="nn-bottom"></div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn btn-new" id="btn-new" style="display:none">再來一局</button>
+    </div>
+    <div class="action-bar" style="margin-top:8px">
+      <button class="btn btn-secondary" id="btn-back">更換設定</button>
+    </div>
+  </div>
+
+  <script src="js/ninetynine.js"></script>
+</body>
+</html>

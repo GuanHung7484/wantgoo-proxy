@@ -300,6 +300,30 @@ main {
     linear-gradient(145deg, rgba(69, 164, 58, 0.88), rgba(27, 73, 30, 0.95));
 }
 
+.blackjack-card {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255, 210, 91, 0.44), transparent 27%),
+    linear-gradient(145deg, rgba(126, 45, 174, 0.82), rgba(23, 34, 112, 0.94));
+}
+
+.oldmaid-card {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(244, 114, 182, 0.44), transparent 29%),
+    linear-gradient(145deg, rgba(100, 70, 190, 0.82), rgba(20, 21, 86, 0.95));
+}
+
+.ninetynine-card {
+  background:
+    radial-gradient(circle at 80% 12%, rgba(255, 132, 54, 0.48), transparent 28%),
+    linear-gradient(145deg, rgba(178, 48, 90, 0.82), rgba(42, 25, 105, 0.95));
+}
+
+.bigtwo-card {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(136, 211, 255, 0.42), transparent 28%),
+    linear-gradient(145deg, rgba(49, 93, 182, 0.84), rgba(22, 27, 88, 0.96));
+}
+
 .game-link {
   display: inline-grid;
   place-items: center;
@@ -3156,6 +3180,22 @@ main {
 
   .lobby-view .farm-card {
     order: 6;
+  }
+
+  .lobby-view .blackjack-card {
+    order: 7;
+  }
+
+  .lobby-view .oldmaid-card {
+    order: 8;
+  }
+
+  .lobby-view .ninetynine-card {
+    order: 9;
+  }
+
+  .lobby-view .bigtwo-card {
+    order: 10;
   }
 
   .lobby-view .game-card {
