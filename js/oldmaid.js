@@ -3,8 +3,8 @@
 const SUITS = ['♠','♥','♦','♣'];
 const VALUES = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
-// AI 名稱對應位置：右(AI1)=香吉士、上(AI2)=索隆、左(AI3)=娜美
-const AI_NAMES = ['香吉士', '索隆', '娜美'];
+// AI 名稱對應位置：右(AI1)=蘇菲亞、上(AI2)=萊恩、左(AI3)=莉莉
+const AI_NAMES = ['蘇菲亞', '萊恩', '莉莉'];
 
 const AI_CONFIG = {
   beginner:     { name: '初學者', icon: '😊', jokerDetect: 0,    bluff: 0    },
@@ -14,12 +14,12 @@ const AI_CONFIG = {
 };
 
 function playerAvatar(name) {
-  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  const key = name === '伊森' ? 'ethan' : name === '蘇菲亞' ? 'sophia' : name === '萊恩' ? 'ryan' : 'lily';
   return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
 }
 
 // 玩家位置對應（索引 → 方位）
-// players[0]=你(下), players[1]=香吉士(右), players[2]=索隆(上), players[3]=娜美(左)
+// players[0]=伊森(下), players[1]=蘇菲亞(右), players[2]=萊恩(上), players[3]=莉莉(左)
 const AREA_IDS    = ['area-bottom', 'area-right', 'area-top', 'area-left'];
 const POSITIONS   = ['bottom', 'right', 'top', 'left'];
 
@@ -286,9 +286,9 @@ function startGame() {
   selectedCardIdx = -1;
   busyLock = false;
 
-  // 建立玩家：[0]=你(下), [1]=香吉士(右), [2]=索隆(上), [3]=娜美(左)
+  // 建立玩家：[0]=伊森(下), [1]=蘇菲亞(右), [2]=萊恩(上), [3]=莉莉(左)
   players = [];
-  players.push({ name: '你', isHuman: true, hand: [], pairs: [], isOut: false });
+  players.push({ name: '伊森', isHuman: true, hand: [], pairs: [], isOut: false });
   for (let i = 0; i < playerCount - 1; i++) {
     players.push({ name: AI_NAMES[i], isHuman: false, hand: [], pairs: [], isOut: false });
   }

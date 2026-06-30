@@ -4,7 +4,7 @@ const SUITS = ['♠','♥','♦','♣'];
 const VALUES = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
 // 參與者名單（依人數截取）
-const PARTICIPANT_NAMES = ['你', '香吉士', '索隆', '娜美'];
+const PARTICIPANT_NAMES = ['伊森', '蘇菲亞', '萊恩', '莉莉'];
 
 const AI_CONFIG = {
   beginner:     { standOn: 14, bustChance: 0.15, name: '初學者', icon: '😊' },
@@ -14,7 +14,7 @@ const AI_CONFIG = {
 };
 
 function playerAvatar(name) {
-  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  const key = name === '伊森' ? 'ethan' : name === '蘇菲亞' ? 'sophia' : name === '萊恩' ? 'ryan' : 'lily';
   return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
 }
 
@@ -211,7 +211,7 @@ async function startDicePhase() {
   // 參與者
   const participants = PARTICIPANT_NAMES.slice(0, playerCount).map(name => ({
     name,
-    isHuman: name === '你',
+    isHuman: name === '伊森',
     dice: 0,
     sortKey: 0
   }));

@@ -4,7 +4,7 @@
 
 const RANKS = ['3','4','5','6','7','8','9','10','J','Q','K','A','2'];
 const SUITS = ['♣','♦','♥','♠'];   // 低 → 高（台灣：梅<方<紅<黑）
-const AI_NAMES = ['香吉士','索隆','娜美'];
+const AI_NAMES = ['蘇菲亞','萊恩','莉莉'];
 
 const AI_CONFIG = {
   beginner:     { name:'初學者', icon:'😊' },
@@ -14,11 +14,11 @@ const AI_CONFIG = {
 };
 
 function playerAvatar(name) {
-  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  const key = name === '伊森' ? 'ethan' : name === '蘇菲亞' ? 'sophia' : name === '萊恩' ? 'ryan' : 'lily';
   return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
 }
 
-// 玩家位置：[0]=你(下), [1]=香吉士(右), [2]=索隆(上), [3]=娜美(左)
+// 玩家位置：[0]=伊森(下), [1]=蘇菲亞(右), [2]=萊恩(上), [3]=莉莉(左)
 const AREA_IDS  = ['bt-bottom','bt-right','bt-top','bt-left'];
 const POSITIONS = ['bottom','right','top','left'];
 
@@ -890,7 +890,7 @@ function startGame() {
   finishOrder  = [];
 
   // 建立玩家
-  players = [{ name:'你', isHuman:true, hand:[] }];
+  players = [{ name:'伊森', isHuman:true, hand:[] }];
   for (let i = 0; i < playerCount-1; i++)
     players.push({ name:AI_NAMES[i], isHuman:false, hand:[] });
 

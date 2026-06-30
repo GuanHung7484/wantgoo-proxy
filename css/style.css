@@ -371,41 +371,28 @@ button, a, [data-clickable], .card.selectable, .card.nn-playable {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   flex: 0 0 auto;
-  border-radius: 50%;
+  border-radius: 14px;
   margin-right: 3px;
-  background: linear-gradient(145deg, #ffe7a8, #ffb85d);
+  background-image: url("../assets/card-avatars.png");
+  background-repeat: no-repeat;
+  background-size: 200% 200%;
   box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, .34),
-    0 3px 10px rgba(0, 0, 0, .28),
-    0 0 0 2px rgba(255, 255, 255, .18);
+    inset 0 2px 0 rgba(255, 255, 255, .28),
+    0 4px 12px rgba(0, 0, 0, .3),
+    0 0 0 2px rgba(255, 255, 255, .2);
   overflow: hidden;
   vertical-align: middle;
 }
 
 .player-avatar::before {
-  content: "";
-  position: absolute;
-  top: -5px;
-  left: 5px;
-  right: 5px;
-  height: 14px;
-  border-radius: 50% 50% 45% 45%;
-  background: #6f3e25;
-  box-shadow:
-    -8px 5px 0 -3px #6f3e25,
-    8px 5px 0 -3px #6f3e25;
-  z-index: 2;
+  content: none;
 }
 
 .avatar-face {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
+  display: none;
 }
 
 .avatar-eyes::before,
@@ -441,82 +428,23 @@ button, a, [data-clickable], .card.selectable, .card.nn-playable {
 }
 
 .player-avatar::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 2px;
-  width: 13px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(255, 115, 147, .5);
-  transform: translateX(-50%);
+  content: none;
 }
 
-.avatar-you {
-  background: linear-gradient(145deg, #ffe9a9, #ffbc63);
+.avatar-ethan {
+  background-position: 0 0;
 }
 
-.avatar-you::before {
-  background: #50301f;
-  box-shadow:
-    -8px 5px 0 -3px #50301f,
-    8px 5px 0 -3px #50301f;
+.avatar-sophia {
+  background-position: 100% 0;
 }
 
-.avatar-sanji {
-  background: linear-gradient(145deg, #fff1a6, #f8c756);
+.avatar-ryan {
+  background-position: 0 100%;
 }
 
-.avatar-sanji::before {
-  top: -2px;
-  left: -1px;
-  right: 9px;
-  height: 18px;
-  border-radius: 52% 48% 46% 44%;
-  background: #f5df62;
-  box-shadow: 12px 2px 0 -4px #f5df62;
-}
-
-.avatar-sanji .avatar-eyes::before {
-  width: 9px;
-  height: 3px;
-  border-radius: 999px;
-  transform: rotate(-8deg);
-}
-
-.avatar-zoro {
-  background: linear-gradient(145deg, #c4f7d2, #54cf8a);
-}
-
-.avatar-zoro::before {
-  background: #177c50;
-  box-shadow:
-    -8px 5px 0 -3px #177c50,
-    8px 5px 0 -3px #177c50;
-}
-
-.avatar-zoro .avatar-mouth {
-  width: 11px;
-  border-color: #31533f;
-}
-
-.avatar-nami {
-  background: linear-gradient(145deg, #ffd0ae, #ff8a6b);
-}
-
-.avatar-nami::before {
-  top: -3px;
-  left: 2px;
-  right: 2px;
-  height: 17px;
-  background: #f47b3d;
-  box-shadow:
-    -9px 7px 0 -3px #f47b3d,
-    9px 7px 0 -3px #f47b3d;
-}
-
-.avatar-nami .avatar-mouth {
-  border-color: #cc4265;
+.avatar-lily {
+  background-position: 100% 100%;
 }
 
 .player-name {

@@ -2,7 +2,7 @@
 
 const SUITS  = ['♠','♥','♦','♣'];
 const VALUES = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-const AI_NAMES = ['香吉士','索隆','娜美'];
+const AI_NAMES = ['蘇菲亞','萊恩','莉莉'];
 
 const AI_CFG = {
   beginner:     { name:'初學者', icon:'😊', rnd:30, saveFn:0  },
@@ -12,7 +12,7 @@ const AI_CFG = {
 };
 
 function playerAvatar(name) {
-  const key = name === '你' ? 'you' : name === '香吉士' ? 'sanji' : name === '索隆' ? 'zoro' : 'nami';
+  const key = name === '伊森' ? 'ethan' : name === '蘇菲亞' ? 'sophia' : name === '萊恩' ? 'ryan' : 'lily';
   return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
 }
 
@@ -264,7 +264,7 @@ function initSetup() {
 // === 遊戲流程 ===
 function startGame() {
   // 建立玩家
-  players = [{ name:'你', isHuman:true, hand:[], eliminated:false }];
+  players = [{ name:'伊森', isHuman:true, hand:[], eliminated:false }];
   for (let i = 0; i < playerCount-1; i++) {
     players.push({ name:AI_NAMES[i], isHuman:false, hand:[], eliminated:false });
   }
