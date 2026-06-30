@@ -667,7 +667,7 @@
             <h3>玩法摘要</h3>
             <div class="rules">
               <article><b>大富翁流程</b>擲骰前進，空地可買，自己土地可升級，踩到別人土地要付過路費。</article>
-              <article><b>特殊格</b>銀行得 500 萬，稅金付 300 萬，醫院休養 1 回合，監獄停 1 回合，命運機會隨機事件。</article>
+              <article><b>特殊格</b>現金格得 500 萬，稅金付 300 萬，醫院休養 1 回合，監獄停 1 回合，命運機會隨機事件。</article>
               <article><b>研究武器</b>擁有建築「研究院」後可研發導彈、飛彈、無人機；核彈需 2 間研究院與 3 棟商辦大樓。</article>
               <article><b>勝利條件</b>資金低於 0 破產，最後沒有破產的玩家獲勝。</article>
             </div>
@@ -709,7 +709,7 @@
         { type: "chance", name: "命運" },
         { type: "land", name: "星光街", kind: "normal" },
         { type: "tax", name: "稅金" },
-        { type: "bank", name: "銀行" },
+        { type: "bank", name: "現金" },
         { type: "land", name: "月兔路", kind: "normal" },
         { type: "land", name: "糖果鋪", kind: "business" },
         { type: "chance", name: "機會" },
@@ -728,7 +728,7 @@
         { type: "land", name: "琉璃街", kind: "normal" },
         { type: "chance", name: "機會" },
         { type: "land", name: "雲端園區", kind: "tech" },
-        { type: "bank", name: "銀行" },
+        { type: "bank", name: "現金" },
         { type: "land", name: "銀河港", kind: "business" },
         { type: "land", name: "獨角獸谷", kind: "normal" },
         { type: "research", name: "研究院" },
@@ -884,7 +884,7 @@
       }
 
       function tileIcon(tile) {
-        const icons = { start: "🚩", chance: "🎲", tax: "💸", bank: "🏦", hospital: "🏥", research: "🔬", jail: "⛓️" };
+        const icons = { start: "🚩", chance: "🎲", tax: "💸", bank: "💰", hospital: "🏥", research: "🔬", jail: "⛓️" };
         if (tile.type !== "land") return icons[tile.type];
         if (tile.kind === "tech") return "⚙️";
         if (tile.kind === "business") return "🏪";
@@ -962,7 +962,7 @@
           start: "經過或停在起點可獲得 1000 萬。",
           chance: "抽一張命運機會卡，可能發財也可能受災。",
           tax: "繳納稅金 300 萬。",
-          bank: "銀行分紅，獲得 500 萬。",
+          bank: "現金獎勵，獲得 500 萬。",
           hospital: "一般檢查，休養 1 回合；被無人機攻擊會住院 3 回合。",
           research: "研究院格會讓目前研究進度額外推進 1 回合。",
           jail: "進監獄停 1 回合。",
@@ -1151,7 +1151,7 @@
         if (tile.type === "land") resolveLand(player, tile);
         if (tile.type === "chance") drawChance(player);
         if (tile.type === "tax") payBank(player, 300, "繳納稅金");
-        if (tile.type === "bank") gainMoney(player, 500, "銀行分紅");
+        if (tile.type === "bank") gainMoney(player, 500, "現金獎勵");
         if (tile.type === "hospital") {
           player.hospital = Math.max(player.hospital, 1);
           log(`${player.name} 到醫院檢查，休養 1 回合。`);
