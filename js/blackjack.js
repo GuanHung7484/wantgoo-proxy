@@ -18,16 +18,55 @@ function playerAvatar(name) {
   return `<span class="player-avatar avatar-${key}" aria-hidden="true"><span class="avatar-face"><span class="avatar-eyes"></span><span class="avatar-mouth"></span></span></span>`;
 }
 
-// 位置定義：上(莊家)→右→下→左
-const POS_LABELS = ['上方', '右方', '下方', '左方'];
-const POS_KEYS   = ['top', 'right', 'bottom', 'left'];
-const AREA_IDS   = ['bj-top', 'bj-right', 'bj-bottom', 'bj-left'];
+function buildSeatedPlayers(count) {
+  const seats = count === 2
+    ? [
+        { name: '蘇菲亞', position: 'top' },
+        { name: '伊森', position: 'bottom' },
+      ]
+    : count === 3
+      ? [
+          { name: '萊恩', position: 'top' },
+          { name: '蘇菲亞', position: 'right' },
+          { name: '伊森', position: 'bottom' },
+        ]
+      : [
+          { name: '萊恩', position: 'top' },
+          { name: '蘇菲亞', position: 'right' },
+          { name: '伊森', position: 'bottom' },
+          { name: '莉莉', position: 'left' },
+        ];
+
+  return seats.map((seat) => ({
+    ...seat,
+    isHuman: seat.name === '伊森',
+    dice: 0,
+    sortKey: 0,
+    hand: [],
+    status: 'playing',
+    result: null,
+  }));
+}
+
+const AREA_BY_POSITION = {
+  top: 'bj-top',
+  right: 'bj-right',
+  bottom: 'bj-bottom',
+  left: 'bj-left',
+};
+const POSITION_LABELS = {
+  top: '上方',
+  right: '右方',
+  bottom: '下方',
+  left: '左方',
+};
 
 // === 狀態 ===
 let deck = [];
 let difficulty = null;
 let playerCount = null;
-let allPlayers = [];   // [0]=上(莊家), [1]=右, [2]=下, [3]=左
+let allPlayers = [];   // 固定座位：伊森永遠在下方，AI 依人數分布在上/右/左
+let dealerIndex = 0;
 let playOrder = [];    // 出牌順序索引 (非莊家先，莊家最後)
 let currentOrderIdx = 0;
 let gamePhase = 'setup'; // setup | dice | playing | dealer | done
@@ -87,25 +126,30 @@ function renderAll() {
   const cfg = AI_CONFIG[difficulty];
   const revealDealer = gamePhase === 'dealer' || gamePhase === 'done';
 
+  Object.values(AREA_BY_POSITION).forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+
   for (let i = 0; i < allPlayers.length; i++) {
     const p = allPlayers[i];
-    const pos = POS_KEYS[i];
-    const areaEl = document.getElementById(AREA_IDS[i]);
+    const pos = p.position;
+    const areaEl = document.getElementById(AREA_BY_POSITION[pos]);
     if (!areaEl) continue;
 
-    const isDealer = i === 0;
+    const isDealer = i === dealerIndex;
     const isSmall = pos === 'left' || pos === 'right';
     const isCurrentTurn = gamePhase === 'playing' && playOrder[currentOrderIdx] === i;
     const isDealerTurn = gamePhase === 'dealer' && isDealer;
     const isActive = isCurrentTurn || isDealerTurn;
 
     // 分數顯示
-    const showScore = isDealer ? (revealDealer || isDealerTurn) : true;
+    const showScore = isDealer ? (p.isHuman || revealDealer || isDealerTurn) : true;
     const scoreText = showScore ? `${cardScore(p.hand)} 點` : '? 點';
 
     // 牌面：莊家第二張蓋牌（直到翻牌）
     const cards = p.hand.map((c, ci) => {
-      const hide = isDealer && ci === 1 && !revealDealer && !isDealerTurn;
+      const hide = isDealer && !p.isHuman && ci === 1 && !revealDealer && !isDealerTurn;
       return renderCard(c, hide, isSmall);
     }).join('');
 
@@ -208,16 +252,11 @@ async function startDicePhase() {
   diceResults.innerHTML = '';
   diceSeats.innerHTML = '';
 
-  // 參與者
-  const participants = PARTICIPANT_NAMES.slice(0, playerCount).map(name => ({
-    name,
-    isHuman: name === '伊森',
-    dice: 0,
-    sortKey: 0
-  }));
+  // 建立固定座位玩家；擲骰只決定莊家，不改座位。
+  allPlayers = buildSeatedPlayers(playerCount);
 
   // 逐一擲骰子動畫
-  for (const p of participants) {
+  for (const p of allPlayers) {
     const row = document.createElement('div');
     row.className = 'dice-row';
     row.innerHTML = `<span class="dice-name">${playerAvatar(p.name)}<span class="player-name">${p.name}</span></span>
@@ -240,16 +279,18 @@ async function startDicePhase() {
     await sleep(300);
   }
 
-  // 排序：骰子大→小
-  participants.sort((a, b) => b.dice - a.dice || b.sortKey - a.sortKey);
+  // 骰子大者為莊家，平手用 sortKey 決定。
+  dealerIndex = allPlayers
+    .map((player, index) => ({ player, index }))
+    .sort((a, b) => b.player.dice - a.player.dice || b.player.sortKey - a.player.sortKey)[0].index;
+  const dealer = allPlayers[dealerIndex];
 
   // 標記莊家
   await sleep(400);
   const rows = diceResults.querySelectorAll('.dice-row');
-  // 找到 participants[0] 在 DOM 中的位置
   const nameEls = diceResults.querySelectorAll('.dice-name');
   nameEls.forEach(el => {
-    if (el.textContent.includes(participants[0].name)) {
+    if (el.textContent.includes(dealer.name)) {
       el.closest('.dice-row').classList.add('dice-dealer-highlight');
       el.closest('.dice-row').querySelector('.dice-value').textContent += ' 👑 莊家！';
     }
@@ -258,30 +299,19 @@ async function startDicePhase() {
   await sleep(600);
 
   // 顯示座位安排
-  const posLabels = ['上方 (莊家)', '右方', '下方', '左方'];
   let seatsHTML = '<div class="dice-seats-title">座位安排</div>';
-  for (let i = 0; i < participants.length; i++) {
-    const emoji = i === 0 ? '👑' : '💺';
-    seatsHTML += `<div class="dice-seat-row">${emoji} ${posLabels[i]}：${participants[i].name}</div>`;
+  for (let i = 0; i < allPlayers.length; i++) {
+    const player = allPlayers[i];
+    const role = i === dealerIndex ? ' 👑 莊家' : '';
+    seatsHTML += `<div class="dice-seat-row">${POSITION_LABELS[player.position]}：${player.name}${role}</div>`;
   }
   diceSeats.innerHTML = seatsHTML;
 
   await sleep(1800);
 
-  // 建立 allPlayers 並開始遊戲
-  allPlayers = participants.map((p, i) => ({
-    name: p.name,
-    isHuman: p.isHuman,
-    hand: [],
-    status: 'playing',
-    result: null,
-    dice: p.dice
-  }));
-
-  // 建立出牌順序：非莊家 (1,2,3) 先，莊家 (0) 最後
-  playOrder = [];
-  for (let i = 1; i < allPlayers.length; i++) playOrder.push(i);
-  playOrder.push(0);
+  // 建立出牌順序：非莊家先，莊家最後。
+  playOrder = allPlayers.map((_, index) => index).filter((index) => index !== dealerIndex);
+  playOrder.push(dealerIndex);
 
   // 切到牌桌
   diceScreen.style.display = 'none';
@@ -321,7 +351,7 @@ function advanceToNextPlayer() {
 
     if (p.status === 'playing') {
       // 莊家最後打（dealerPlay 階段）
-      if (idx === 0) {
+      if (idx === dealerIndex) {
         startDealerTurn();
         return;
       }
@@ -352,7 +382,7 @@ function enableHumanButtons(p) {
 // === 玩家操作 ===
 function hit() {
   if (gamePhase !== 'playing' && gamePhase !== 'dealer') return;
-  const idx = (gamePhase === 'dealer') ? 0 : playOrder[currentOrderIdx];
+  const idx = (gamePhase === 'dealer') ? dealerIndex : playOrder[currentOrderIdx];
   const p = allPlayers[idx];
   if (!p.isHuman || p.status !== 'playing') return;
 
@@ -376,7 +406,7 @@ function hit() {
 
 function stand() {
   if (gamePhase !== 'playing' && gamePhase !== 'dealer') return;
-  const idx = (gamePhase === 'dealer') ? 0 : playOrder[currentOrderIdx];
+  const idx = (gamePhase === 'dealer') ? dealerIndex : playOrder[currentOrderIdx];
   const p = allPlayers[idx];
   if (!p.isHuman || p.status !== 'playing') return;
 
@@ -433,7 +463,7 @@ async function aiPlayerPlay(idx) {
 
     // 魔王看莊家明牌
     if (cfg.peeks && !shouldHit && score < 19) {
-      const dealerUp = cardScore([allPlayers[0].hand[0]]);
+      const dealerUp = cardScore([allPlayers[dealerIndex].hand[0]]);
       if (dealerUp >= 7 && score <= 16) shouldHit = true;
     }
 
@@ -455,10 +485,10 @@ async function aiPlayerPlay(idx) {
 // === 莊家出牌 ===
 async function startDealerTurn() {
   gamePhase = 'dealer';
-  const dealer = allPlayers[0];
+  const dealer = allPlayers[dealerIndex];
 
   // 如果所有閒家都爆了，莊家直接贏
-  const nonDealers = allPlayers.slice(1);
+  const nonDealers = allPlayers.filter((_, index) => index !== dealerIndex);
   if (nonDealers.every(p => p.status === 'bust')) {
     dealer.status = 'stand';
     renderAll();
@@ -488,7 +518,7 @@ async function startDealerTurn() {
 }
 
 async function aiDealerPlay() {
-  const dealer = allPlayers[0];
+  const dealer = allPlayers[dealerIndex];
   const cfg = AI_CONFIG[difficulty];
   setMessage(`🤖 ${dealer.name}(莊家) 翻牌...`, '');
   await sleep(600);
@@ -503,8 +533,8 @@ async function aiDealerPlay() {
     let shouldHit = score < cfg.standOn;
 
     if (cfg.peeks) {
-      const best = Math.max(...allPlayers.slice(1)
-        .filter(p => p.status !== 'bust')
+      const best = Math.max(...allPlayers
+        .filter((p, index) => index !== dealerIndex && p.status !== 'bust')
         .map(p => cardScore(p.hand)));
       if (score >= cfg.standOn && score < best && score <= 18) shouldHit = true;
     }
@@ -529,13 +559,14 @@ async function aiDealerPlay() {
 // === 結算 ===
 function resolveRound() {
   gamePhase = 'done';
-  const dealer = allPlayers[0];
+  const dealer = allPlayers[dealerIndex];
   const ds = cardScore(dealer.hand);
   const dealerBJ = isBlackjack(dealer.hand);
   const dealerBust = ds > 21;
 
   // 閒家與莊家比較
-  for (let i = 1; i < allPlayers.length; i++) {
+  for (let i = 0; i < allPlayers.length; i++) {
+    if (i === dealerIndex) continue;
     const p = allPlayers[i];
     const ps = cardScore(p.hand);
     const pBJ = isBlackjack(p.hand);
@@ -551,7 +582,7 @@ function resolveRound() {
   }
 
   // 莊家的結果：反轉（閒家贏 = 莊家輸）
-  const nonDealerResults = allPlayers.slice(1).map(p => p.result);
+  const nonDealerResults = allPlayers.filter((_, index) => index !== dealerIndex).map(p => p.result);
   if (nonDealerResults.every(r => r === 'lose')) dealer.result = 'win';
   else if (nonDealerResults.every(r => r === 'win')) dealer.result = 'lose';
   else dealer.result = 'push';
